@@ -13,6 +13,7 @@ type Config struct {
 	SessionIdleTimeout time.Duration
 	SessionMaxLifetime time.Duration
 	PasswordMinLength  int
+	MaxTransferPaise   int64
 }
 
 func Load() (Config, error) {
@@ -37,7 +38,18 @@ func Load() (Config, error) {
 		SessionIdleTimeout: envDuration("SESSION_IDLE_TIMEOUT", 30*time.Minute),
 		SessionMaxLifetime: envDuration("SESSION_MAX_LIFETIME", 24*time.Hour),
 		PasswordMinLength:  envInt("PASSWORD_MIN_LENGTH", 12),
+		MaxTransferPaise:   envMoneyPaise("MAX_TRANSFER_AMOUNT_INR", 10000000),
 	}, nil
+}
+
+func envMoneyPaise(name string, fallback int64) int64 {
+	if value := os.Getenv(name); value != "" {
+		var whole int64
+		if _, err := fmt.Sscanf(value, "%d", &whole); err == nil && whole > 0 {
+			return whole * 100
+		}
+	}
+	return fallback
 }
 
 func envDuration(name string, fallback time.Duration) time.Duration {

@@ -1,5 +1,4 @@
 package httpx
-package httpx
 
 import (
 	"encoding/json"
