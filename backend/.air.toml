@@ -1,0 +1,17 @@
+root = "/app"
+tmp_dir = "tmp"
+
+[build]
+  bin = "/tmp/bank-app-server"
+  cmd = "go build -o /tmp/bank-app-server ./cmd/server"
+  delay = 1000
+  exclude_dir = ["tmp", "vendor", "tests"]
+  include_ext = ["go"]
+  kill_delay = "500ms"
+  send_interrupt = true
+
+[log]
+  time = true
+
+[misc]
+  clean_on_exit = true

@@ -1,0 +1,2 @@
+-- Reference seed data is intentionally retained during rollback. The owning
+-- table down migrations remove it in dependency order.
