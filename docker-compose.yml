@@ -15,38 +15,5 @@ services:
     ports:
       - "5432:5432"
 
-  migrate:
-    image: migrate/migrate
-    volumes:
-      - ./backend/migrations:/migrations:ro
-    command: ["-path=/migrations", "-database", "${DATABASE_URL}", "up"]
-    depends_on:
-      db:
-        condition: service_healthy
-
-  backend:
-    build:
-      context: ./backend
-      target: dev
-    depends_on:
-      db:
-        condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
-    env_file:
-      - .env
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./backend:/app
-      - go-build-cache:/go
-    command: ["air", "-c", ".air.toml"]
-
-  # frontend:
-  #   build: ./frontend
-  #   ports:
-  #     - "4200:4200"
-
 volumes:
   postgres-data:
-  go-build-cache:

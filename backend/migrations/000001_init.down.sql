@@ -1,0 +1,11 @@
+DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS audit_events;
+DROP TABLE IF EXISTS transactions;
+DROP TABLE IF EXISTS ledger_entries;
+DROP TABLE IF EXISTS fund_transfers;
+DROP TABLE IF EXISTS account_assignments;
+DROP TABLE IF EXISTS beneficiaries;
+DROP TABLE IF EXISTS bank_accounts;
+DROP TABLE IF EXISTS customers;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS roles;

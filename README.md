@@ -1,15 +1,23 @@
 # Bank App
 
-## Running in Codespaces
+## Running locally
 
-Copy the demo environment file, then start the database, migrations, and backend:
+Copy the demo environment file, then start PostgreSQL, apply migrations, and run
+the backend locally:
 
 ```sh
 cp -n .env.example .env
-docker compose up --build
+docker compose down -v
+make db-up
+make migrate-up
+make run
 ```
 
-The backend health check is available at `http://localhost:8080/health` and PostgreSQL is available on port `5432`.
+The backend health check is available at `http://localhost:8080/health` and
+PostgreSQL is available on port `5432`. The `make run` and migration targets
+load variables from `.env` automatically. The `down -v` command removes the
+old database volume so the consolidated initial migration can run from a clean
+database.
 
 ## Demo credentials
 
@@ -30,11 +38,12 @@ send it as `X-CSRF-Token` on authenticated state-changing requests.
 Useful commands:
 
 ```sh
-make up
-make down
+make db-up
+make db-down
 make logs
 make migrate-up
 make migrate-down
+make run
 make test
 ```
 
