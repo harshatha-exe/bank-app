@@ -10,8 +10,10 @@ import (
 
 	"bank-app-ioc/backend/config"
 	"bank-app-ioc/backend/database"
+	"bank-app-ioc/backend/internal/apperr"
 	"bank-app-ioc/backend/internal/audit"
 	"bank-app-ioc/backend/internal/auth"
+	"bank-app-ioc/backend/internal/httpx"
 	"bank-app-ioc/backend/internal/middleware"
 	"bank-app-ioc/backend/repository"
 )
@@ -29,8 +31,8 @@ func main() {
 	defer pool.Close()
 
 	router := gin.New()
-	router.Use(middleware.CorrelationID(), middleware.Logging(), middleware.Recovery(), middleware.SecurityHeaders(), middleware.NewRateLimiter(5, time.Minute))
-	userRepository := repository.NewUserRepository(pool)
+	router.Use(middleware.CorrelationID(), middleware.Logging(), middleware.Recovery(), middleware.SecurityHeaders(), middleware.ErrorHandler(), middleware.NewRateLimiter(5, time.Minute))
+	router.NoRoute(func(c *gin.Context) { httpx.Fail(c, apperr.NotFound()) })
 	sessionRepository := repository.NewSessionRepository(pool)
 	authService := auth.NewService(userRepository, sessionRepository, appConfig.SessionIdleTimeout, appConfig.SessionMaxLifetime, appConfig.PasswordMinLength)
 	auditService := audit.NewService(repository.NewAuditRepository(pool))
