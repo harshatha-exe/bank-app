@@ -1,0 +1,36 @@
+{
+  "name": "Bank App",
+  "build": { "dockerfile": "Dockerfile" },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "installYarnUsingApt": false,
+      "version": "lts"
+    },
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "ms-azuretools.vscode-docker",
+        "angular.ng-template",
+        "humao.rest-client"
+      ]
+    }
+  },
+  "forwardPorts": [8080, 4200, 5432],
+  "portsAttributes": {
+    "8080": {
+      "label": "Backend API",
+      "visibility": "private"
+    },
+    "4200": {
+      "label": "Angular frontend"
+    },
+    "5432": {
+      "label": "Postgres"
+    }
+  },
+  "postCreateCommand": "go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest && go install github.com/swaggo/swag/cmd/swag@latest && go install github.com/air-verse/air@latest && cp -n .env.example .env"
+}

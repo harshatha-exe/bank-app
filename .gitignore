@@ -1,0 +1,33 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Go build and test artifacts
+/bin/
+/backend/bin/
+/backend/tmp/
+*.test
+*.out
+coverage.out
+coverage.html
+
+# Runtime and logs
+*.log
+*.pid
+
+# Local API testing
+cookies.txt
+cookiejar.txt
+*.cookie
+
+# IDE and OS files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+.DS_Store
+
+# Temporary files
+*.tmp
+*.swp
