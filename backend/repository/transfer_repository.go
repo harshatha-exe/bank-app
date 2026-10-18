@@ -38,22 +38,6 @@ func (r *TransferRepository) Create(ctx context.Context, userID, correlationID u
 	}
 	defer tx.Rollback(ctx)
 
-	var existing TransferRecord
-	err = tx.QueryRow(ctx, `SELECT f.id,f.source_account_id,f.destination_account_id,COALESCE(f.beneficiary_id,'00000000-0000-0000-0000-000000000000'),f.initiated_by,f.reference_number,f.amount::text,COALESCE(f.purpose,''),f.status,f.currency,f.created_at
-		FROM fund_transfers f JOIN customers c ON c.id=f.customer_id
-		WHERE c.user_id=$1 AND f.idempotency_key=$2`, userID, in.IdempotencyKey).
-		Scan(&existing.ID, &existing.SourceAccountID, &existing.DestinationAccountID, &existing.BeneficiaryID, &existing.InitiatedBy, &existing.ReferenceNumber, &existing.Amount, &existing.Purpose, &existing.Status, &existing.Currency, &existing.CreatedAt)
-	if err == nil {
-		if existing.SourceAccountID != in.SourceAccountID || existing.DestinationAccountID != in.DestinationAccountID ||
-			existing.BeneficiaryID != in.BeneficiaryID || existing.Amount != fmt.Sprintf("%d.%02d", in.AmountPaise/100, in.AmountPaise%100) || existing.Purpose != in.Purpose {
-			return TransferRecord{}, false, ErrIdempotencyConflict
-		}
-		return existing, true, nil
-	}
-	if !errors.Is(err, pgx.ErrNoRows) {
-		return TransferRecord{}, false, err
-	}
-
 	rows, err := tx.Query(ctx, `SELECT a.id,a.customer_id,a.balance,a.currency,a.status
 		FROM bank_accounts a WHERE a.id IN ($1,$2) ORDER BY a.id FOR UPDATE`, in.SourceAccountID, in.DestinationAccountID)
 	if err != nil {
@@ -95,6 +79,21 @@ func (r *TransferRepository) Create(ctx context.Context, userID, correlationID u
 	}
 	if source.customer != owner {
 		return TransferRecord{}, false, ErrNotFound
+	}
+	var existing TransferRecord
+	err = tx.QueryRow(ctx, `SELECT f.id,f.source_account_id,f.destination_account_id,COALESCE(f.beneficiary_id,'00000000-0000-0000-0000-000000000000'),f.initiated_by,f.reference_number,f.amount::text,COALESCE(f.purpose,''),f.status,f.currency,f.created_at
+		FROM fund_transfers f JOIN customers c ON c.id=f.customer_id
+		WHERE c.user_id=$1 AND f.idempotency_key=$2`, userID, in.IdempotencyKey).
+		Scan(&existing.ID, &existing.SourceAccountID, &existing.DestinationAccountID, &existing.BeneficiaryID, &existing.InitiatedBy, &existing.ReferenceNumber, &existing.Amount, &existing.Purpose, &existing.Status, &existing.Currency, &existing.CreatedAt)
+	if err == nil {
+		if existing.SourceAccountID != in.SourceAccountID || existing.DestinationAccountID != in.DestinationAccountID ||
+			existing.BeneficiaryID != in.BeneficiaryID || existing.Amount != fmt.Sprintf("%d.%02d", in.AmountPaise/100, in.AmountPaise%100) || existing.Purpose != in.Purpose {
+			return TransferRecord{}, false, ErrIdempotencyConflict
+		}
+		return existing, true, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return TransferRecord{}, false, err
 	}
 	if source.status == "FROZEN" || destination.status == "FROZEN" {
 		return TransferRecord{}, false, ErrFrozenAccount
