@@ -11,6 +11,7 @@ import (
 	"bank-app-ioc/backend/config"
 	"bank-app-ioc/backend/database"
 	"bank-app-ioc/backend/internal/account"
+	"bank-app-ioc/backend/internal/admin"
 	"bank-app-ioc/backend/internal/apperr"
 	"bank-app-ioc/backend/internal/audit"
 	"bank-app-ioc/backend/internal/auth"
@@ -40,10 +41,18 @@ func main() {
 	userRepository := repository.NewUserRepository(pool)
 	authService := auth.NewService(userRepository, sessionRepository, appConfig.SessionIdleTimeout, appConfig.SessionMaxLifetime, appConfig.PasswordMinLength)
 	auditService := audit.NewService(repository.NewAuditRepository(pool))
+	configRepository := repository.NewConfigRepository(pool)
+	adminHandler := admin.NewHandler(admin.NewService(
+		repository.NewAdminRepository(pool),
+		repository.NewAssignmentRepository(pool),
+		configRepository,
+		repository.NewAuditQueryRepository(pool),
+		appConfig.PasswordMinLength,
+	))
 	authHandler := auth.NewHandler(authService, auditService, appConfig.CSRFSecret)
 	accountHandler := account.NewHandler(account.NewService(repository.NewAccountRepository(pool)), auditService)
 	beneficiaryHandler := beneficiary.NewHandler(beneficiary.NewService(repository.NewBeneficiaryRepository(pool)), auditService)
-	transferHandler := transfer.NewHandler(transfer.NewServiceFromConfig(repository.NewTransferRepository(pool), appConfig), auditService)
+	transferHandler := transfer.NewHandler(transfer.NewServiceFromConfig(repository.NewTransferRepository(pool), appConfig).WithLimitProvider(configRepository.MaxTransferPaise), auditService)
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
@@ -62,6 +71,15 @@ func main() {
 	customer.POST("/transfers", transferHandler.Create)
 	customer.GET("/transfers", transferHandler.List)
 	protected.GET("/transfers/:referenceNumber", transferHandler.Get)
+	adminRoutes := protected.Group("/admin", middleware.AdminOnly(auditService))
+	adminRoutes.POST("/users", adminHandler.CreateUser)
+	adminRoutes.PATCH("/users/:userId/status", adminHandler.SetStatus)
+	adminRoutes.PATCH("/users/:userId/role", adminHandler.ChangeRole)
+	adminRoutes.POST("/users/:userId/reset-password", adminHandler.ResetPassword)
+	adminRoutes.POST("/account-assignments", adminHandler.AssignAccount)
+	adminRoutes.GET("/config/transaction-limit", adminHandler.GetLimit)
+	adminRoutes.PATCH("/config/transaction-limit", adminHandler.SetLimit)
+	adminRoutes.GET("/audit-events", adminHandler.SearchAudit)
 
 	log.Printf("server listening on :%s", appConfig.Port)
 	if err := router.Run(":" + appConfig.Port); err != nil {

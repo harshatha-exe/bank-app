@@ -9,6 +9,7 @@ import (
 	"bank-app-ioc/backend/internal/apperr"
 	"bank-app-ioc/backend/internal/validate"
 	"bank-app-ioc/backend/repository"
+
 	"github.com/google/uuid"
 )
 
@@ -19,8 +20,9 @@ type transferRepository interface {
 	ListForCustomer(context.Context, uuid.UUID, int, int) ([]repository.TransferRecord, int, error)
 }
 type Service struct {
-	repo     transferRepository
-	maxPaise int64
+	repo          transferRepository
+	maxPaise      int64
+	limitProvider func(context.Context) (int64, error)
 }
 
 func NewService(repo transferRepository, maxPaise int64) *Service {
@@ -29,8 +31,21 @@ func NewService(repo transferRepository, maxPaise int64) *Service {
 func NewServiceFromConfig(repo transferRepository, cfg config.Config) *Service {
 	return NewService(repo, cfg.MaxTransferPaise)
 }
+
+// WithLimitProvider makes the limit come from the database (admin-configurable).
+func (s *Service) WithLimitProvider(p func(context.Context) (int64, error)) *Service {
+	s.limitProvider = p
+	return s
+}
 func dto(r repository.TransferRecord) Transfer {
-	return Transfer{ID: r.ID, SourceAccountID: r.SourceAccountID, DestinationAccountID: r.DestinationAccountID, BeneficiaryID: r.BeneficiaryID, ReferenceNumber: r.ReferenceNumber, Amount: r.Amount, Currency: r.Currency, Purpose: r.Purpose, Status: r.Status, CreatedAt: r.CreatedAt.UTC().Format(time.RFC3339)}
+	var ben *uuid.UUID
+	if r.BeneficiaryID != uuid.Nil {
+		b := r.BeneficiaryID
+		ben = &b
+	}
+	return Transfer{ReferenceNumber: r.ReferenceNumber, SourceAccountID: r.SourceAccountID, DestinationAccountID: r.DestinationAccountID,
+		BeneficiaryID: ben, Amount: r.Amount, Currency: r.Currency, Purpose: r.Purpose, Status: r.Status,
+		CreatedAt: r.CreatedAt.UTC().Format(time.RFC3339)}
 }
 func (s *Service) Create(ctx context.Context, userID, correlationID uuid.UUID, req CreateRequest, key, ip string) (Transfer, bool, error) {
 	v := validate.New()
@@ -43,7 +58,15 @@ func (s *Service) Create(ctx context.Context, userID, correlationID uuid.UUID, r
 	if err := v.Err(); err != nil {
 		return Transfer{}, false, err
 	}
-	if paise > s.maxPaise {
+	limit := s.maxPaise
+	if s.limitProvider != nil {
+		l, err := s.limitProvider(ctx)
+		if err != nil {
+			return Transfer{}, false, apperr.Internal(err) // fail closed
+		}
+		limit = l
+	}
+	if paise > limit {
 		return Transfer{}, false, apperr.Unprocessable("TRANSFER_LIMIT_EXCEEDED", "Transfer exceeds the transaction limit.")
 	}
 	req.Purpose = validate.Text(req.Purpose)
