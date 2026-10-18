@@ -1,0 +1,132 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# a new push cancels the older run on the same branch
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# least privilege: the pipeline can only read the repo
+permissions:
+  contents: read
+
+env:
+  # throwaway values for a throwaway CI database, not real secrets
+  DATABASE_URL: postgres://bankuser:bankpass@localhost:5432/bankdb?sslmode=disable
+  CSRF_SECRET: ci-only-not-a-real-secret
+  # add any new required vars from config.go here
+
+jobs:
+  backend:
+    name: Build, test, migrate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: bankuser
+          POSTGRES_PASSWORD: bankpass
+          POSTGRES_DB: bankdb
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U bankuser -d bankdb"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Verify dependencies match go.sum
+        run: go mod verify
+
+      # - name: Check formatting
+      #   run: |
+      #     unformatted=$(gofmt -l .)
+      #     if [ -n "$unformatted" ]; then echo "Unformatted files:"; echo "$unformatted"; exit 1; fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Build
+        run: go build ./...
+
+      - name: Apply migrations
+        working-directory: .
+        run: >
+          docker run --rm --network host
+          -v "${{ github.workspace }}/backend/migrations:/migrations:ro"
+          migrate/migrate:v4.17.1
+          -path=/migrations -database "$DATABASE_URL" up
+
+      - name: Test (race detector, random order, no cache)
+        run: go test -race -shuffle=on -count=1 -coverprofile=coverage.out ./...
+
+      - name: Migration rollback round-trip
+        working-directory: .
+        run: |
+          M="docker run --rm --network host -v ${{ github.workspace }}/backend/migrations:/migrations:ro migrate/migrate:v4.17.1 -path=/migrations -database $DATABASE_URL"
+          $M down -all
+          $M up
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: backend/coverage.out
+
+  # lint:
+  #   name: Lint
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 10
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-go@v5
+  #       with:
+  #         go-version-file: backend/go.mod
+  #         cache-dependency-path: backend/go.sum
+  #     - uses: golangci/golangci-lint-action@v8
+  #       with:
+  #         working-directory: backend
+  #         version: latest   # pin to an exact version once it passes
+
+  vulncheck:
+    name: Dependency vulnerabilities
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - name: govulncheck
+        working-directory: backend
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+  docker:
+    name: Production image builds
+    needs: backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: backend
+          target: prod
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
