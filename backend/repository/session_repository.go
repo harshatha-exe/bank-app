@@ -28,7 +28,7 @@ func (r *SessionRepository) Create(ctx context.Context, userID uuid.UUID, tokenH
 }
 
 func (r *SessionRepository) Find(ctx context.Context, tokenHash string) (authSession SessionRecord, err error) {
-	err = r.pool.QueryRow(ctx, `SELECT s.id,s.user_id,u.username,r.name,s.last_active_at,s.expires_at FROM sessions s JOIN users u ON u.id=s.user_id JOIN roles r ON r.id=u.role_id WHERE s.session_token_hash=$1`, tokenHash).
+	err = r.pool.QueryRow(ctx, `SELECT s.id,s.user_id,u.username,r.name,s.last_active_at,s.expires_at FROM sessions s JOIN users u ON u.id=s.user_id JOIN roles r ON r.id=u.role_id WHERE s.session_token_hash=$1 AND u.status='ACTIVE'`, tokenHash).
 		Scan(&authSession.ID, &authSession.UserID, &authSession.Username, &authSession.Role, &authSession.LastActiveAt, &authSession.ExpiresAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return SessionRecord{}, ErrNotFound

@@ -55,3 +55,6 @@ func verifyPassword(password, encoded string) bool {
 	actual := argon2.IDKey([]byte(password), salt, uint32(values["t"]), uint32(values["m"]), uint8(values["p"]), uint32(len(expected)))
 	return subtle.ConstantTimeCompare(actual, expected) == 1
 }
+
+// HashPassword is the exported entry point for other packages (admin).
+func HashPassword(password string) (string, error) { return hashPassword(password) }

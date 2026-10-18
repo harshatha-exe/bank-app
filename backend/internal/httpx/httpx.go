@@ -9,6 +9,7 @@ import (
 	"bank-app-ioc/backend/internal/apperr"
 	"bank-app-ioc/backend/internal/auth"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 const maxBodyBytes = 64 << 10 // 64 KB is plenty for this API
@@ -59,4 +60,8 @@ func OK(c *gin.Context, status int, data any, meta gin.H) {
 	}
 	meta["correlationId"] = c.GetString("correlation_id")
 	c.JSON(status, gin.H{"data": data, "meta": meta})
+}
+func CorrelationID(c *gin.Context) uuid.UUID {
+	id, _ := uuid.Parse(c.GetString("correlation_id"))
+	return id
 }

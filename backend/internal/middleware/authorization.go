@@ -1,8 +1,10 @@
 package middleware
 
 import (
+	"bank-app-ioc/backend/internal/apperr"
 	"bank-app-ioc/backend/internal/audit"
 	"bank-app-ioc/backend/internal/auth"
+	"bank-app-ioc/backend/internal/httpx"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -25,13 +27,15 @@ func roleOnly(auditService *audit.Service, role string) gin.HandlerFunc {
 			} else {
 				auditService.Record(c, nil, "ACCESS_DENIED", c.Request.Method, "FAILURE", c.ClientIP(), correlationUUID(c), nil)
 			}
-			c.AbortWithStatusJSON(403, gin.H{"error": gin.H{"code": "FORBIDDEN", "message": "Access denied."}, "meta": gin.H{"correlationId": c.GetString("correlation_id")}})
+			httpx.Fail(c, apperr.Forbidden())
 			return
 		}
 		c.Next()
 	}
 }
-
+func AdminOnly(auditService *audit.Service) gin.HandlerFunc {
+	return roleOnly(auditService, "ADMIN")
+}
 func correlationUUID(c *gin.Context) uuid.UUID {
 	id, _ := uuid.Parse(c.GetString("correlation_id"))
 	return id

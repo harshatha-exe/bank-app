@@ -112,3 +112,12 @@ func Money(s string) (int64, bool) {
 func FormatMoney(paise int64) string {
 	return fmt.Sprintf("%d.%02d", paise/100, paise%100)
 }
+
+var usernameRe = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{2,99}$`)
+
+func Username(s string) bool { return usernameRe.MatchString(s) }
+
+var codeRe = regexp.MustCompile(`^[A-Z][A-Z0-9_]{1,99}$`)
+
+// Code validates identifiers like ACCESS_DENIED used as filter values.
+func Code(s string) bool { return codeRe.MatchString(s) }
