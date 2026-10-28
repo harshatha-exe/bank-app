@@ -2,7 +2,9 @@ package config
 
 import (
 	"fmt"
+	"net"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -14,6 +16,8 @@ type Config struct {
 	SessionMaxLifetime time.Duration
 	PasswordMinLength  int
 	MaxTransferPaise   int64
+	TrustedProxies     []string
+	TransferRateLimit  int
 }
 
 func Load() (Config, error) {
@@ -30,6 +34,10 @@ func Load() (Config, error) {
 	if csrfSecret == "" {
 		return Config{}, fmt.Errorf("CSRF_SECRET is required")
 	}
+	trustedProxies, err := envTrustedProxies()
+	if err != nil {
+		return Config{}, err
+	}
 
 	return Config{
 		DatabaseURL:        databaseURL,
@@ -39,7 +47,38 @@ func Load() (Config, error) {
 		SessionMaxLifetime: envDuration("SESSION_MAX_LIFETIME", 24*time.Hour),
 		PasswordMinLength:  envInt("PASSWORD_MIN_LENGTH", 12),
 		MaxTransferPaise:   envMoneyPaise("MAX_TRANSFER_AMOUNT_INR", 10000000),
+		TrustedProxies:     trustedProxies,
+		TransferRateLimit:  envInt("TRANSFER_RATE_LIMIT", 10),
 	}, nil
+}
+
+func envTrustedProxies() ([]string, error) {
+	value := strings.TrimSpace(os.Getenv("TRUSTED_PROXIES"))
+	if value == "" {
+		return nil, nil
+	}
+	var proxies []string
+	for _, entry := range strings.Split(value, ",") {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			return nil, fmt.Errorf("TRUSTED_PROXIES contains an empty entry")
+		}
+		if entry == "0.0.0.0/0" || entry == "::/0" {
+			return nil, fmt.Errorf("TRUSTED_PROXIES must not trust all addresses")
+		}
+		if ip := net.ParseIP(entry); ip == nil {
+			_, network, err := net.ParseCIDR(entry)
+			if err != nil {
+				return nil, fmt.Errorf("invalid TRUSTED_PROXIES entry %q", entry)
+			}
+			ones, _ := network.Mask.Size()
+			if ones == 0 && network.IP.IsUnspecified() {
+				return nil, fmt.Errorf("TRUSTED_PROXIES must not trust all addresses")
+			}
+		}
+		proxies = append(proxies, entry)
+	}
+	return proxies, nil
 }
 
 func envMoneyPaise(name string, fallback int64) int64 {

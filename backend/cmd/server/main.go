@@ -34,13 +34,16 @@ func main() {
 	}
 	defer pool.Close()
 
-	router := gin.New()
-	router.Use(middleware.CorrelationID(), middleware.Logging(), middleware.Recovery(), middleware.SecurityHeaders(), middleware.ErrorHandler(), middleware.NewRateLimiter(5, time.Minute))
-	router.NoRoute(func(c *gin.Context) { httpx.Fail(c, apperr.NotFound()) })
 	sessionRepository := repository.NewSessionRepository(pool)
 	userRepository := repository.NewUserRepository(pool)
 	authService := auth.NewService(userRepository, sessionRepository, appConfig.SessionIdleTimeout, appConfig.SessionMaxLifetime, appConfig.PasswordMinLength)
 	auditService := audit.NewService(repository.NewAuditRepository(pool))
+	router := gin.New()
+	if err := router.SetTrustedProxies(appConfig.TrustedProxies); err != nil {
+		log.Fatal("invalid trusted proxies configuration")
+	}
+	router.Use(middleware.CorrelationID(), middleware.Logging(), middleware.Recovery(), middleware.SecurityHeaders(), middleware.ErrorHandler(), middleware.NewRateLimiterWithClock(5, time.Minute, time.Now, auditService).Handler())
+	router.NoRoute(func(c *gin.Context) { httpx.Fail(c, apperr.NotFound()) })
 	configRepository := repository.NewConfigRepository(pool)
 	adminHandler := admin.NewHandler(admin.NewService(
 		repository.NewAdminRepository(pool),
@@ -62,13 +65,15 @@ func main() {
 	protected.POST("/auth/logout", authHandler.Logout)
 	protected.GET("/me", authHandler.Me)
 	customer := protected.Group("", middleware.CustomerOnly(auditService))
+	transferLimiter := middleware.NewTransferRateLimiter(appConfig.TransferRateLimit, time.Minute, auditService)
+	defer transferLimiter.Stop()
 	customer.GET("/accounts", accountHandler.List)
 	customer.GET("/accounts/:accountId", accountHandler.Get)
 	customer.GET("/accounts/:accountId/transactions", accountHandler.Transactions)
 	customer.POST("/beneficiaries", beneficiaryHandler.Create)
 	customer.GET("/beneficiaries", beneficiaryHandler.List)
 	customer.PATCH("/beneficiaries/:beneficiaryId/status", beneficiaryHandler.UpdateStatus)
-	customer.POST("/transfers", transferHandler.Create)
+	customer.POST("/transfers", transferLimiter.Handler(), transferHandler.Create)
 	customer.GET("/transfers", transferHandler.List)
 	protected.GET("/transfers/:referenceNumber", transferHandler.Get)
 	adminRoutes := protected.Group("/admin", middleware.AdminOnly(auditService))
