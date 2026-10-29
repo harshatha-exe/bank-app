@@ -19,6 +19,20 @@ load variables from `.env` automatically. The `down -v` command removes the
 old database volume so the consolidated initial migration can run from a clean
 database.
 
+## Running the frontend
+
+A React + Tailwind web app lives in [`frontend/`](frontend/README.md). With the backend running
+(see above):
+
+```sh
+cd frontend
+npm install
+npm run dev
+```
+
+Then open <http://localhost:5173>. The dev server proxies `/api` to the backend on port 8080
+(set `VITE_API_TARGET` to use another address). Sign in with a demo user below.
+
 ## Demo credentials
 
 These credentials are **DEMO ONLY**. Change or remove them before using this
