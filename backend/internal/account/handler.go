@@ -10,6 +10,7 @@ import (
 	"bank-app-ioc/backend/internal/audit"
 	"bank-app-ioc/backend/internal/httpx"
 	"bank-app-ioc/backend/repository"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -118,7 +119,7 @@ func (h *Handler) Transactions(c *gin.Context) {
 		httpx.Fail(c, apperr.NotFound())
 		return
 	}
-	filter, err := transactionFilter(c)
+	filter, err := ParseTransactionFilter(c)
 	if err != nil {
 		httpx.Fail(c, err)
 		return
@@ -148,7 +149,7 @@ func correlationID(c *gin.Context) uuid.UUID {
 	return id
 }
 
-func transactionFilter(c *gin.Context) (repository.TransactionFilter, error) {
+func ParseTransactionFilter(c *gin.Context) (repository.TransactionFilter, error) {
 	f := repository.TransactionFilter{Page: 1, PageSize: defaultPageSize, Sort: "createdAt", Direction: "DESC", Type: c.Query("type"), MinAmount: c.Query("minAmount"), MaxAmount: c.Query("maxAmount")}
 	v := c.Query("page")
 	if v != "" {

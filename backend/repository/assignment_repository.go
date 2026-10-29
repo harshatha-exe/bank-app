@@ -17,6 +17,29 @@ type AssignmentRecord struct {
 	AssignedAt                      time.Time
 }
 
+func (r *AssignmentRepository) ListForUser(ctx context.Context, userID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := r.pool.Query(ctx, `SELECT account_id FROM account_assignments WHERE user_id=$1 ORDER BY assigned_at,account_id`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []uuid.UUID
+	for rows.Next() {
+		var accountID uuid.UUID
+		if err := rows.Scan(&accountID); err != nil {
+			return nil, err
+		}
+		result = append(result, accountID)
+	}
+	return result, rows.Err()
+}
+
+func (r *AssignmentRepository) HasAccount(ctx context.Context, userID, accountID uuid.UUID) (bool, error) {
+	var exists bool
+	err := r.pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM account_assignments WHERE user_id=$1 AND account_id=$2)`, userID, accountID).Scan(&exists)
+	return exists, err
+}
+
 func NewAssignmentRepository(pool *pgxpool.Pool) *AssignmentRepository {
 	return &AssignmentRepository{pool: pool}
 }

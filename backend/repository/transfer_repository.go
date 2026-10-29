@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,8 +24,14 @@ type TransferInput struct {
 
 type TransferRecord struct {
 	ID, SourceAccountID, DestinationAccountID, BeneficiaryID, InitiatedBy uuid.UUID
-	ReferenceNumber, Amount, Purpose, Status, Currency                    string
+	ReferenceNumber, Amount, Purpose, Status, ReviewStatus, Currency      string
 	CreatedAt                                                             time.Time
+}
+
+type OperationsTransferFilter struct {
+	Reference, Status, ReviewStatus string
+	DateFrom, DateTo                *time.Time
+	Page, PageSize                  int
 }
 
 func NewTransferRepository(pool *pgxpool.Pool) *TransferRepository {
@@ -81,10 +88,10 @@ func (r *TransferRepository) Create(ctx context.Context, userID, correlationID u
 		return TransferRecord{}, false, ErrNotFound
 	}
 	var existing TransferRecord
-	err = tx.QueryRow(ctx, `SELECT f.id,f.source_account_id,f.destination_account_id,COALESCE(f.beneficiary_id,'00000000-0000-0000-0000-000000000000'),f.initiated_by,f.reference_number,f.amount::text,COALESCE(f.purpose,''),f.status,f.currency,f.created_at
+	err = tx.QueryRow(ctx, `SELECT f.id,f.source_account_id,f.destination_account_id,COALESCE(f.beneficiary_id,'00000000-0000-0000-0000-000000000000'),f.initiated_by,f.reference_number,f.amount::text,COALESCE(f.purpose,''),f.status,f.review_status,f.currency,f.created_at
 		FROM fund_transfers f
 		WHERE f.initiated_by=$1 AND f.idempotency_key=$2`, userID, in.IdempotencyKey).
-		Scan(&existing.ID, &existing.SourceAccountID, &existing.DestinationAccountID, &existing.BeneficiaryID, &existing.InitiatedBy, &existing.ReferenceNumber, &existing.Amount, &existing.Purpose, &existing.Status, &existing.Currency, &existing.CreatedAt)
+		Scan(&existing.ID, &existing.SourceAccountID, &existing.DestinationAccountID, &existing.BeneficiaryID, &existing.InitiatedBy, &existing.ReferenceNumber, &existing.Amount, &existing.Purpose, &existing.Status, &existing.ReviewStatus, &existing.Currency, &existing.CreatedAt)
 	if err == nil {
 		if existing.SourceAccountID != in.SourceAccountID || existing.DestinationAccountID != in.DestinationAccountID ||
 			existing.BeneficiaryID != in.BeneficiaryID || existing.Amount != fmt.Sprintf("%d.%02d", in.AmountPaise/100, in.AmountPaise%100) || existing.Purpose != in.Purpose {
@@ -124,9 +131,9 @@ func (r *TransferRepository) Create(ctx context.Context, userID, correlationID u
 	var out TransferRecord
 	err = tx.QueryRow(ctx, `INSERT INTO fund_transfers(reference_number,source_account_id,destination_account_id,beneficiary_id,initiated_by,amount,currency,purpose,status,review_status,idempotency_key,completed_at)
 		VALUES($1,$2,$3,NULLIF($4::uuid,'00000000-0000-0000-0000-000000000000'::uuid),$5,$6,'INR',$7,'COMPLETED','NONE',$8,NOW())
-		RETURNING id,source_account_id,destination_account_id,COALESCE(beneficiary_id,'00000000-0000-0000-0000-000000000000'),initiated_by,reference_number,amount::text,COALESCE(purpose,''),status,currency,created_at`,
+		RETURNING id,source_account_id,destination_account_id,COALESCE(beneficiary_id,'00000000-0000-0000-0000-000000000000'),initiated_by,reference_number,amount::text,COALESCE(purpose,''),status,review_status,currency,created_at`,
 		in.ReferenceNumber, in.SourceAccountID, in.DestinationAccountID, in.BeneficiaryID, userID, fmt.Sprintf("%d.%02d", in.AmountPaise/100, in.AmountPaise%100), in.Purpose, in.IdempotencyKey).
-		Scan(&out.ID, &out.SourceAccountID, &out.DestinationAccountID, &out.BeneficiaryID, &out.InitiatedBy, &out.ReferenceNumber, &out.Amount, &out.Purpose, &out.Status, &out.Currency, &out.CreatedAt)
+		Scan(&out.ID, &out.SourceAccountID, &out.DestinationAccountID, &out.BeneficiaryID, &out.InitiatedBy, &out.ReferenceNumber, &out.Amount, &out.Purpose, &out.Status, &out.ReviewStatus, &out.Currency, &out.CreatedAt)
 	if err != nil {
 		return TransferRecord{}, false, err
 	}
@@ -173,10 +180,85 @@ func (r *TransferRepository) ListForCustomer(ctx context.Context, userID uuid.UU
 	}
 	return out, total, rows.Err()
 }
+
+func (r *TransferRepository) ListForOperations(ctx context.Context, userID uuid.UUID, f OperationsTransferFilter) ([]TransferRecord, int, error) {
+	args := []any{userID}
+	conditions := []string{"EXISTS (SELECT 1 FROM account_assignments aa WHERE aa.user_id=$1 AND aa.account_id IN (f.source_account_id,f.destination_account_id))"}
+	add := func(sql string, value any) {
+		args = append(args, value)
+		conditions = append(conditions, fmt.Sprintf(sql, len(args)))
+	}
+	if f.Reference != "" {
+		add("f.reference_number=$%d", f.Reference)
+	}
+	if f.Status != "" {
+		add("f.status=$%d", f.Status)
+	}
+	if f.ReviewStatus != "" {
+		add("f.review_status=$%d", f.ReviewStatus)
+	}
+	if f.DateFrom != nil {
+		add("f.created_at >= $%d", *f.DateFrom)
+	}
+	if f.DateTo != nil {
+		add("f.created_at <= $%d", *f.DateTo)
+	}
+	where := strings.Join(conditions, " AND ")
+	var total int
+	if err := r.pool.QueryRow(ctx, `SELECT count(*) FROM fund_transfers f WHERE `+where, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+	offset := (f.Page - 1) * f.PageSize
+	args = append(args, f.PageSize, offset)
+	query := `SELECT f.id,f.source_account_id,f.destination_account_id,COALESCE(f.beneficiary_id,'00000000-0000-0000-0000-000000000000'),f.initiated_by,f.reference_number,f.amount::text,COALESCE(f.purpose,''),f.status,f.review_status,f.currency,f.created_at FROM fund_transfers f WHERE ` + where + ` ORDER BY f.created_at DESC,f.id DESC LIMIT $` + fmt.Sprint(len(args)-1) + ` OFFSET $` + fmt.Sprint(len(args))
+	rows, err := r.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+	var result []TransferRecord
+	for rows.Next() {
+		var item TransferRecord
+		if err := rows.Scan(&item.ID, &item.SourceAccountID, &item.DestinationAccountID, &item.BeneficiaryID, &item.InitiatedBy, &item.ReferenceNumber, &item.Amount, &item.Purpose, &item.Status, &item.ReviewStatus, &item.Currency, &item.CreatedAt); err != nil {
+			return nil, 0, err
+		}
+		result = append(result, item)
+	}
+	return result, total, rows.Err()
+}
+
+func (r *TransferRepository) Review(ctx context.Context, userID uuid.UUID, reference, reviewStatus string) (TransferRecord, string, error) {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return TransferRecord{}, "", err
+	}
+	defer tx.Rollback(ctx)
+	var out TransferRecord
+	var oldStatus string
+	err = tx.QueryRow(ctx, `SELECT f.review_status FROM fund_transfers f
+		WHERE f.reference_number=$2 AND EXISTS (SELECT 1 FROM account_assignments aa WHERE aa.user_id=$1 AND aa.account_id IN (f.source_account_id,f.destination_account_id)) FOR UPDATE`, userID, reference).Scan(&oldStatus)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return TransferRecord{}, "", ErrNotFound
+	}
+	if err != nil {
+		return TransferRecord{}, "", err
+	}
+	err = tx.QueryRow(ctx, `UPDATE fund_transfers f SET review_status=$3,updated_at=NOW()
+		WHERE f.reference_number=$2 AND EXISTS (SELECT 1 FROM account_assignments aa WHERE aa.user_id=$1 AND aa.account_id IN (f.source_account_id,f.destination_account_id))
+		RETURNING f.review_status,f.id,f.source_account_id,f.destination_account_id,COALESCE(f.beneficiary_id,'00000000-0000-0000-0000-000000000000'),f.initiated_by,f.reference_number,f.amount::text,COALESCE(f.purpose,''),f.status,f.currency,f.created_at`, userID, reference, reviewStatus).
+		Scan(&out.ReviewStatus, &out.ID, &out.SourceAccountID, &out.DestinationAccountID, &out.BeneficiaryID, &out.InitiatedBy, &out.ReferenceNumber, &out.Amount, &out.Purpose, &out.Status, &out.Currency, &out.CreatedAt)
+	if err != nil {
+		return TransferRecord{}, "", err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return TransferRecord{}, "", err
+	}
+	return out, oldStatus, nil
+}
 func (r *TransferRepository) get(ctx context.Context, condition string, ref string, userID uuid.UUID) (TransferRecord, error) {
 	var out TransferRecord
-	err := r.pool.QueryRow(ctx, `SELECT f.id,f.source_account_id,f.destination_account_id,COALESCE(f.beneficiary_id,'00000000-0000-0000-0000-000000000000'),f.initiated_by,f.reference_number,f.amount::text,COALESCE(f.purpose,''),f.status,f.currency,f.created_at FROM fund_transfers f WHERE `+condition, ref, userID).
-		Scan(&out.ID, &out.SourceAccountID, &out.DestinationAccountID, &out.BeneficiaryID, &out.InitiatedBy, &out.ReferenceNumber, &out.Amount, &out.Purpose, &out.Status, &out.Currency, &out.CreatedAt)
+	err := r.pool.QueryRow(ctx, `SELECT f.id,f.source_account_id,f.destination_account_id,COALESCE(f.beneficiary_id,'00000000-0000-0000-0000-000000000000'),f.initiated_by,f.reference_number,f.amount::text,COALESCE(f.purpose,''),f.status,f.review_status,f.currency,f.created_at FROM fund_transfers f WHERE `+condition, ref, userID).
+		Scan(&out.ID, &out.SourceAccountID, &out.DestinationAccountID, &out.BeneficiaryID, &out.InitiatedBy, &out.ReferenceNumber, &out.Amount, &out.Purpose, &out.Status, &out.ReviewStatus, &out.Currency, &out.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return TransferRecord{}, ErrNotFound
 	}

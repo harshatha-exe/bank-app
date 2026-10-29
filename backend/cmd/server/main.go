@@ -21,6 +21,7 @@ import (
 	"bank-app-ioc/backend/internal/beneficiary"
 	"bank-app-ioc/backend/internal/httpx"
 	"bank-app-ioc/backend/internal/middleware"
+	"bank-app-ioc/backend/internal/operations"
 	"bank-app-ioc/backend/internal/transfer"
 	"bank-app-ioc/backend/repository"
 )
@@ -72,6 +73,7 @@ func main() {
 	accountHandler := account.NewHandler(account.NewService(repository.NewAccountRepository(pool)), auditService)
 	beneficiaryHandler := beneficiary.NewHandler(beneficiary.NewService(repository.NewBeneficiaryRepository(pool)), auditService)
 	transferHandler := transfer.NewHandler(transfer.NewServiceFromConfig(repository.NewTransferRepository(pool), appConfig).WithLimitProvider(configRepository.MaxTransferPaise), auditService)
+	operationsHandler := operations.NewHandler(operations.NewService(repository.NewAccountRepository(pool), repository.NewAssignmentRepository(pool), repository.NewTransferRepository(pool)), auditService)
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
@@ -92,6 +94,13 @@ func main() {
 	customer.POST("/transfers", transferLimiter.Handler(), transferHandler.Create)
 	customer.GET("/transfers", transferHandler.List)
 	protected.GET("/transfers/:referenceNumber", transferHandler.Get)
+	ops := protected.Group("/operations", middleware.OperationsOnly(auditService))
+	ops.GET("/accounts", operationsHandler.ListAccounts)
+	ops.GET("/accounts/:accountId/transactions", operationsHandler.Transactions)
+	ops.GET("/transfers", operationsHandler.ListTransfers)
+	ops.PATCH("/transfers/:reference/review", operationsHandler.ReviewTransfer)
+	ops.POST("/accounts/:accountId/freeze", operationsHandler.Freeze)
+	ops.POST("/accounts/:accountId/unfreeze", operationsHandler.Unfreeze)
 	adminRoutes := protected.Group("/admin", middleware.AdminOnly(auditService))
 	adminRoutes.POST("/users", adminHandler.CreateUser)
 	adminRoutes.PATCH("/users/:userId/status", adminHandler.SetStatus)

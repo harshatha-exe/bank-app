@@ -93,6 +93,11 @@ definitions:
       status:
         type: string
     type: object
+  internal_operations.ReviewRequest:
+    properties:
+      reviewStatus:
+        type: string
+    type: object
   internal_transfer.CreateRequest:
     properties:
       amount:
@@ -796,6 +801,284 @@ paths:
       summary: Get current user
       tags:
       - auth
+  /operations/accounts:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: List assigned accounts
+      tags:
+      - operations
+  /operations/accounts/{accountId}/freeze:
+    post:
+      parameters:
+      - description: Account UUID
+        in: path
+        name: accountId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      - CSRFToken: []
+      summary: Freeze account
+      tags:
+      - operations
+  /operations/accounts/{accountId}/transactions:
+    get:
+      parameters:
+      - description: Account UUID
+        in: path
+        name: accountId
+        required: true
+        type: string
+      - description: Transaction type
+        enum:
+        - DEBIT
+        - CREDIT
+        in: query
+        name: type
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Sort field
+        enum:
+        - createdAt
+        - amount
+        - type
+        in: query
+        name: sort
+        type: string
+      - description: Sort direction
+        enum:
+        - ASC
+        - DESC
+        in: query
+        name: direction
+        type: string
+      - description: RFC3339 start time
+        in: query
+        name: from
+        type: string
+      - description: RFC3339 end time
+        in: query
+        name: to
+        type: string
+      - description: Minimum amount
+        in: query
+        name: minAmount
+        type: string
+      - description: Maximum amount
+        in: query
+        name: maxAmount
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: List assigned account transactions
+      tags:
+      - operations
+  /operations/accounts/{accountId}/unfreeze:
+    post:
+      parameters:
+      - description: Account UUID
+        in: path
+        name: accountId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      - CSRFToken: []
+      summary: Unfreeze account
+      tags:
+      - operations
+  /operations/transfers:
+    get:
+      parameters:
+      - description: Exact reference number
+        in: query
+        name: reference
+        type: string
+      - description: Transfer status
+        enum:
+        - PENDING
+        - COMPLETED
+        - FAILED
+        in: query
+        name: status
+        type: string
+      - description: Review status
+        enum:
+        - NONE
+        - UNDER_REVIEW
+        - RESOLVED
+        in: query
+        name: reviewStatus
+        type: string
+      - description: RFC3339 start time
+        in: query
+        name: dateFrom
+        type: string
+      - description: RFC3339 end time
+        in: query
+        name: dateTo
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: List assigned transfers
+      tags:
+      - operations
+  /operations/transfers/{reference}/review:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Transfer reference number
+        in: path
+        name: reference
+        required: true
+        type: string
+      - description: Review request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_operations.ReviewRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      - CSRFToken: []
+      summary: Review transfer
+      tags:
+      - operations
   /transfers:
     get:
       consumes:

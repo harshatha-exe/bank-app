@@ -1104,6 +1104,442 @@ const docTemplate = `{
                 }
             }
         },
+        "/operations/accounts": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "operations"
+                ],
+                "summary": "List assigned accounts",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/operations/accounts/{accountId}/freeze": {
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    },
+                    {
+                        "CSRFToken": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "operations"
+                ],
+                "summary": "Freeze account",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account UUID",
+                        "name": "accountId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/operations/accounts/{accountId}/transactions": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "operations"
+                ],
+                "summary": "List assigned account transactions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account UUID",
+                        "name": "accountId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "DEBIT",
+                            "CREDIT"
+                        ],
+                        "type": "string",
+                        "description": "Transaction type",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "createdAt",
+                            "amount",
+                            "type"
+                        ],
+                        "type": "string",
+                        "description": "Sort field",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "ASC",
+                            "DESC"
+                        ],
+                        "type": "string",
+                        "description": "Sort direction",
+                        "name": "direction",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "RFC3339 start time",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "RFC3339 end time",
+                        "name": "to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Minimum amount",
+                        "name": "minAmount",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Maximum amount",
+                        "name": "maxAmount",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/operations/accounts/{accountId}/unfreeze": {
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    },
+                    {
+                        "CSRFToken": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "operations"
+                ],
+                "summary": "Unfreeze account",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account UUID",
+                        "name": "accountId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/operations/transfers": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "operations"
+                ],
+                "summary": "List assigned transfers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Exact reference number",
+                        "name": "reference",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "PENDING",
+                            "COMPLETED",
+                            "FAILED"
+                        ],
+                        "type": "string",
+                        "description": "Transfer status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "NONE",
+                            "UNDER_REVIEW",
+                            "RESOLVED"
+                        ],
+                        "type": "string",
+                        "description": "Review status",
+                        "name": "reviewStatus",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "RFC3339 start time",
+                        "name": "dateFrom",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "RFC3339 end time",
+                        "name": "dateTo",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/operations/transfers/{reference}/review": {
+            "patch": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    },
+                    {
+                        "CSRFToken": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "operations"
+                ],
+                "summary": "Review transfer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transfer reference number",
+                        "name": "reference",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Review request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_operations.ReviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/transfers": {
             "get": {
                 "security": [
@@ -1440,6 +1876,14 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_operations.ReviewRequest": {
+            "type": "object",
+            "properties": {
+                "reviewStatus": {
                     "type": "string"
                 }
             }
