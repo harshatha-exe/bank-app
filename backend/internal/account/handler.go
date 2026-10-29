@@ -26,6 +26,15 @@ func NewHandler(service *Service, auditService *audit.Service) *Handler {
 	return &Handler{service: service, audit: auditService}
 }
 
+// List returns all accounts owned by the current customer.
+// @Summary List accounts
+// @Tags accounts
+// @Accept json
+// @Produce json
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Security SessionAuth
+// @Router /accounts [get]
 func (h *Handler) List(c *gin.Context) {
 	s, ok := httpx.Session(c)
 	if !ok {
@@ -39,6 +48,18 @@ func (h *Handler) List(c *gin.Context) {
 	}
 	httpx.OK(c, http.StatusOK, data, nil)
 }
+
+// Get returns one owned account.
+// @Summary Get account
+// @Tags accounts
+// @Accept json
+// @Produce json
+// @Param accountId path string true "Account UUID"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 404 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Security SessionAuth
+// @Router /accounts/{accountId} [get]
 func (h *Handler) Get(c *gin.Context) {
 	s, ok := httpx.Session(c)
 	if !ok {
@@ -63,6 +84,28 @@ func (h *Handler) Get(c *gin.Context) {
 	}
 	httpx.OK(c, http.StatusOK, data, nil)
 }
+
+// Transactions lists transactions for one owned account.
+// @Summary List account transactions
+// @Tags accounts
+// @Accept json
+// @Produce json
+// @Param accountId path string true "Account UUID"
+// @Param type query string false "Transaction type" Enums(DEBIT,CREDIT)
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Page size"
+// @Param sort query string false "Sort field" Enums(createdAt,amount,type)
+// @Param direction query string false "Sort direction" Enums(ASC,DESC)
+// @Param from query string false "RFC3339 start time"
+// @Param to query string false "RFC3339 end time"
+// @Param minAmount query string false "Minimum amount"
+// @Param maxAmount query string false "Maximum amount"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 404 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Security SessionAuth
+// @Router /accounts/{accountId}/transactions [get]
 func (h *Handler) Transactions(c *gin.Context) {
 	s, ok := httpx.Session(c)
 	if !ok {

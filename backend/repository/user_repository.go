@@ -42,6 +42,9 @@ func (r *UserRepository) CreateCustomer(ctx context.Context, username, passwordH
 	err = tx.QueryRow(ctx, `INSERT INTO users(username,password_hash,role_id,status) SELECT $1,$2,id,'ACTIVE' FROM roles WHERE name='CUSTOMER' RETURNING id,username,password_hash,status`, username, passwordHash).
 		Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Status)
 	if err != nil {
+		if pgUniqueViolation(err) {
+			return u, ErrAlreadyExists
+		}
 		return u, err
 	}
 	u.Role = "CUSTOMER"

@@ -50,6 +50,9 @@ func (r *BeneficiaryRepository) CreateForUser(ctx context.Context, userID, desti
 		return BeneficiaryRecord{}, ErrNotFound
 	}
 	if err != nil {
+		if pgUniqueViolation(err) {
+			return BeneficiaryRecord{}, ErrAlreadyExists
+		}
 		return BeneficiaryRecord{}, err
 	}
 	if err := r.pool.QueryRow(ctx, `SELECT account_number FROM bank_accounts WHERE id=$1`, destinationID).Scan(&item.DestinationAccountNumber); err != nil {

@@ -21,6 +21,26 @@ type Handler struct {
 func NewHandler(service *Service, auditService *audit.Service) *Handler {
 	return &Handler{service: service, audit: auditService}
 }
+
+// Create executes a transfer.
+// @Summary Create transfer
+// @Tags transfers
+// @Accept json
+// @Produce json
+// @Param request body CreateRequest true "Transfer request"
+// @Param Idempotency-Key header string true "Unique idempotency key"
+// @Success 201 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 404 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 409 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse "IDEMPOTENCY_CONFLICT"
+// @Failure 422 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse "INSUFFICIENT_FUNDS, ACCOUNT_FROZEN, BENEFICIARY_INACTIVE, TRANSFER_LIMIT_EXCEEDED, VALIDATION_ERROR"
+// @Failure 429 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse "RATE_LIMITED; Retry-After contains seconds until retry"
+// @Header 429 {string} Retry-After
+// @Security SessionAuth
+// @Security CSRFToken
+// @Router /transfers [post]
 func (h *Handler) Create(c *gin.Context) {
 	s, ok := httpx.Session(c)
 	if !ok {
@@ -34,6 +54,14 @@ func (h *Handler) Create(c *gin.Context) {
 	}
 	data, _, err := h.service.Create(c, s.UserID, correlationID(c), req, c.GetHeader("Idempotency-Key"), c.ClientIP())
 	if err != nil {
+		code := transferFailureCode(err)
+		metadata := map[string]string{
+			"reason":               code,
+			"sourceAccountId":      req.SourceAccountID.String(),
+			"destinationAccountId": req.DestinationAccountID.String(),
+			"amount":               req.Amount,
+		}
+		h.audit.Record(c, &s.UserID, "TRANSFER_FAILED", "CREATE", "FAILURE", c.ClientIP(), correlationID(c), metadata)
 		if _, ok := err.(*apperr.Error); ok {
 			httpx.Fail(c, err)
 		} else {
@@ -43,6 +71,31 @@ func (h *Handler) Create(c *gin.Context) {
 	}
 	httpx.OK(c, http.StatusCreated, data, nil)
 }
+
+func transferFailureCode(err error) string {
+	const internal = "INTERNAL_ERROR"
+	var appErr *apperr.Error
+	if errors.As(err, &appErr) {
+		switch appErr.Code {
+		case "INSUFFICIENT_FUNDS", "ACCOUNT_FROZEN", "BENEFICIARY_INACTIVE",
+			"TRANSFER_LIMIT_EXCEEDED", "VALIDATION_ERROR", "IDEMPOTENCY_CONFLICT", "NOT_FOUND":
+			return appErr.Code
+		}
+	}
+	return internal
+}
+
+// Get returns a transfer by reference number.
+// @Summary Get transfer
+// @Tags transfers
+// @Accept json
+// @Produce json
+// @Param referenceNumber path string true "Transfer reference number"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 404 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Security SessionAuth
+// @Router /transfers/{referenceNumber} [get]
 func (h *Handler) Get(c *gin.Context) {
 	s, ok := httpx.Session(c)
 	if !ok {
@@ -72,6 +125,19 @@ func (h *Handler) Get(c *gin.Context) {
 	}
 	httpx.OK(c, http.StatusOK, data, nil)
 }
+
+// List returns transfers for the current customer.
+// @Summary List transfers
+// @Tags transfers
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Page size"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Security SessionAuth
+// @Router /transfers [get]
 func (h *Handler) List(c *gin.Context) {
 	s, ok := httpx.Session(c)
 	if !ok {

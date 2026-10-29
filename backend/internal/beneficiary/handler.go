@@ -3,7 +3,6 @@ package beneficiary
 import (
 	"errors"
 	"net/http"
-	"strings"
 
 	"bank-app-ioc/backend/internal/apperr"
 	"bank-app-ioc/backend/internal/audit"
@@ -21,6 +20,16 @@ type Handler struct {
 func NewHandler(service *Service, auditService *audit.Service) *Handler {
 	return &Handler{service: service, audit: auditService}
 }
+
+// List returns the current customer's beneficiaries.
+// @Summary List beneficiaries
+// @Tags beneficiaries
+// @Accept json
+// @Produce json
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Security SessionAuth
+// @Router /beneficiaries [get]
 func (h *Handler) List(c *gin.Context) {
 	s, ok := httpx.Session(c)
 	if !ok {
@@ -34,6 +43,22 @@ func (h *Handler) List(c *gin.Context) {
 	}
 	httpx.OK(c, http.StatusOK, data, nil)
 }
+
+// Create adds a beneficiary.
+// @Summary Create beneficiary
+// @Tags beneficiaries
+// @Accept json
+// @Produce json
+// @Param request body CreateRequest true "Beneficiary request"
+// @Success 201 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 404 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 409 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Security SessionAuth
+// @Security CSRFToken
+// @Router /beneficiaries [post]
 func (h *Handler) Create(c *gin.Context) {
 	s, ok := httpx.Session(c)
 	if !ok {
@@ -51,7 +76,7 @@ func (h *Handler) Create(c *gin.Context) {
 			httpx.Fail(c, apperr.NotFound())
 			return
 		}
-		if strings.Contains(err.Error(), "duplicate key") {
+		if errors.Is(err, repository.ErrAlreadyExists) {
 			httpx.Fail(c, apperr.Conflict("DUPLICATE_BENEFICIARY", "Beneficiary already exists."))
 			return
 		}
@@ -65,6 +90,22 @@ func (h *Handler) Create(c *gin.Context) {
 	h.audit.Record(c, &s.UserID, "BENEFICIARY_CREATED", "CREATE", "SUCCESS", c.ClientIP(), correlationID(c), nil)
 	httpx.OK(c, http.StatusCreated, data, nil)
 }
+
+// UpdateStatus changes a beneficiary status.
+// @Summary Update beneficiary status
+// @Tags beneficiaries
+// @Accept json
+// @Produce json
+// @Param beneficiaryId path string true "Beneficiary UUID"
+// @Param request body StatusRequest true "Status request"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 404 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Security SessionAuth
+// @Security CSRFToken
+// @Router /beneficiaries/{beneficiaryId}/status [patch]
 func (h *Handler) UpdateStatus(c *gin.Context) {
 	s, ok := httpx.Session(c)
 	if !ok {

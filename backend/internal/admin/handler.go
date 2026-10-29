@@ -37,6 +37,20 @@ func pathID(c *gin.Context, name string) (uuid.UUID, bool) {
 	return id, true
 }
 
+// CreateUser creates an operations or customer user.
+// @Summary Create user
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param request body CreateUserRequest true "User request"
+// @Success 201 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 409 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Security SessionAuth
+// @Security CSRFToken
+// @Router /admin/users [post]
 func (h *Handler) CreateUser(c *gin.Context) {
 	actor, ok := caller(c)
 	if !ok {
@@ -55,6 +69,21 @@ func (h *Handler) CreateUser(c *gin.Context) {
 	httpx.OK(c, http.StatusCreated, u, nil)
 }
 
+// SetStatus changes a user's status.
+// @Summary Set user status
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param userId path string true "User UUID"
+// @Param request body StatusRequest true "Status request"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 404 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Security SessionAuth
+// @Security CSRFToken
+// @Router /admin/users/{userId}/status [patch]
 func (h *Handler) SetStatus(c *gin.Context) {
 	actor, ok := caller(c)
 	if !ok {
@@ -77,6 +106,21 @@ func (h *Handler) SetStatus(c *gin.Context) {
 	httpx.OK(c, http.StatusOK, gin.H{"id": target, "status": status}, nil)
 }
 
+// ChangeRole changes a user's role.
+// @Summary Change user role
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param userId path string true "User UUID"
+// @Param request body RoleRequest true "Role request"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 404 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Security SessionAuth
+// @Security CSRFToken
+// @Router /admin/users/{userId}/role [patch]
 func (h *Handler) ChangeRole(c *gin.Context) {
 	actor, ok := caller(c)
 	if !ok {
@@ -99,6 +143,21 @@ func (h *Handler) ChangeRole(c *gin.Context) {
 	httpx.OK(c, http.StatusOK, gin.H{"id": target, "role": role}, nil)
 }
 
+// ResetPassword resets a user's password.
+// @Summary Reset user password
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param userId path string true "User UUID"
+// @Param request body ResetPasswordRequest true "Password request"
+// @Success 204
+// @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 404 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Security SessionAuth
+// @Security CSRFToken
+// @Router /admin/users/{userId}/reset-password [post]
 func (h *Handler) ResetPassword(c *gin.Context) {
 	actor, ok := caller(c)
 	if !ok {
@@ -120,6 +179,20 @@ func (h *Handler) ResetPassword(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// AssignAccount assigns an account to an operations user.
+// @Summary Assign account
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param request body AssignRequest true "Assignment request"
+// @Success 201 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 409 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Security SessionAuth
+// @Security CSRFToken
+// @Router /admin/account-assignments [post]
 func (h *Handler) AssignAccount(c *gin.Context) {
 	actor, ok := caller(c)
 	if !ok {
@@ -138,6 +211,16 @@ func (h *Handler) AssignAccount(c *gin.Context) {
 	httpx.OK(c, http.StatusCreated, a, nil)
 }
 
+// GetLimit returns the configured transaction limit.
+// @Summary Get transaction limit
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Security SessionAuth
+// @Router /admin/config/transaction-limit [get]
 func (h *Handler) GetLimit(c *gin.Context) {
 	l, err := h.svc.GetLimit(c.Request.Context())
 	if err != nil {
@@ -147,6 +230,19 @@ func (h *Handler) GetLimit(c *gin.Context) {
 	httpx.OK(c, http.StatusOK, l, nil)
 }
 
+// SetLimit updates the transaction limit.
+// @Summary Set transaction limit
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param request body LimitRequest true "Limit request"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Security SessionAuth
+// @Security CSRFToken
+// @Router /admin/config/transaction-limit [patch]
 func (h *Handler) SetLimit(c *gin.Context) {
 	actor, ok := caller(c)
 	if !ok {
@@ -165,6 +261,26 @@ func (h *Handler) SetLimit(c *gin.Context) {
 	httpx.OK(c, http.StatusOK, l, nil)
 }
 
+// SearchAudit searches audit events.
+// @Summary Search audit events
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param eventType query string false "Event type"
+// @Param actorUserId query string false "Actor user UUID"
+// @Param entityType query string false "Entity type"
+// @Param entityId query string false "Entity UUID"
+// @Param result query string false "Result"
+// @Param from query string false "RFC3339 start time"
+// @Param to query string false "RFC3339 end time"
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Page size"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Security SessionAuth
+// @Router /admin/audit-events [get]
 func (h *Handler) SearchAudit(c *gin.Context) {
 	q := AuditQuery{
 		EventType: c.Query("eventType"), ActorUserID: c.Query("actorUserId"), EntityType: c.Query("entityType"),

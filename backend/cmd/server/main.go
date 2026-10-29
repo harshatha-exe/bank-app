@@ -7,9 +7,12 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"bank-app-ioc/backend/config"
 	"bank-app-ioc/backend/database"
+	_ "bank-app-ioc/backend/docs"
 	"bank-app-ioc/backend/internal/account"
 	"bank-app-ioc/backend/internal/admin"
 	"bank-app-ioc/backend/internal/apperr"
@@ -22,6 +25,16 @@ import (
 	"bank-app-ioc/backend/repository"
 )
 
+// @title Online Banking Mini Application API
+// @version 1.0
+// @description Online banking API. Single currency INR; amounts are decimal strings with 2 places. Authentication uses a session cookie.
+// @BasePath /api
+// @securityDefinitions.apikey SessionAuth
+// @in cookie
+// @name session_id
+// @securityDefinitions.apikey CSRFToken
+// @in header
+// @name X-CSRF-Token
 func main() {
 	appConfig, err := config.Load()
 	if err != nil {
@@ -44,6 +57,9 @@ func main() {
 	}
 	router.Use(middleware.CorrelationID(), middleware.Logging(), middleware.Recovery(), middleware.SecurityHeaders(), middleware.ErrorHandler(), middleware.NewRateLimiterWithClock(5, time.Minute, time.Now, auditService).Handler())
 	router.NoRoute(func(c *gin.Context) { httpx.Fail(c, apperr.NotFound()) })
+	if appConfig.SwaggerEnabled {
+		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	}
 	configRepository := repository.NewConfigRepository(pool)
 	adminHandler := admin.NewHandler(admin.NewService(
 		repository.NewAdminRepository(pool),

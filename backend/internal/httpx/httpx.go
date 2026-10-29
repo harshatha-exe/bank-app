@@ -14,6 +14,22 @@ import (
 
 const maxBodyBytes = 64 << 10 // 64 KB is plenty for this API
 
+type Response struct {
+	Data interface{}            `json:"data,omitempty"`
+	Meta map[string]interface{} `json:"meta,omitempty"`
+}
+
+type ErrorResponse struct {
+	Error ErrorBody              `json:"error"`
+	Meta  map[string]interface{} `json:"meta,omitempty"`
+}
+
+type ErrorBody struct {
+	Code    string            `json:"code"`
+	Message string            `json:"message"`
+	Fields  map[string]string `json:"fields,omitempty"`
+}
+
 // BindJSON is a STRICT replacement for c.ShouldBindJSON:
 //   - must be application/json
 //   - body capped at 64 KB

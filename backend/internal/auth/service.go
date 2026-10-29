@@ -93,6 +93,3 @@ func PublicUserFor(u User) PublicUser {
 func PublicUserForSession(s Session) PublicUser {
 	return PublicUser{ID: s.UserID, Username: s.Username, Role: s.Role}
 }
-func IsUniqueViolation(err error) bool {
-	return err != nil && strings.Contains(err.Error(), "duplicate key")
-}

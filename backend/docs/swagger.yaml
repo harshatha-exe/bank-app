@@ -1,0 +1,931 @@
+basePath: /api
+definitions:
+  bank-app-ioc_backend_internal_httpx.ErrorBody:
+    properties:
+      code:
+        type: string
+      fields:
+        additionalProperties:
+          type: string
+        type: object
+      message:
+        type: string
+    type: object
+  bank-app-ioc_backend_internal_httpx.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorBody'
+      meta:
+        additionalProperties: true
+        type: object
+    type: object
+  bank-app-ioc_backend_internal_httpx.Response:
+    properties:
+      data: {}
+      meta:
+        additionalProperties: true
+        type: object
+    type: object
+  internal_admin.AssignRequest:
+    properties:
+      accountId:
+        type: string
+      operationsUserId:
+        type: string
+    type: object
+  internal_admin.CreateUserRequest:
+    properties:
+      fullName:
+        description: required only when role is CUSTOMER
+        type: string
+      role:
+        type: string
+      temporaryPassword:
+        type: string
+      username:
+        type: string
+    type: object
+  internal_admin.LimitRequest:
+    properties:
+      maxTransferAmount:
+        type: string
+    type: object
+  internal_admin.ResetPasswordRequest:
+    properties:
+      newPassword:
+        type: string
+    type: object
+  internal_admin.RoleRequest:
+    properties:
+      role:
+        type: string
+    type: object
+  internal_admin.StatusRequest:
+    properties:
+      status:
+        type: string
+    type: object
+  internal_auth.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  internal_auth.SignupRequest:
+    properties:
+      fullName:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  internal_beneficiary.CreateRequest:
+    properties:
+      destinationAccountId:
+        type: string
+      nickname:
+        type: string
+    type: object
+  internal_beneficiary.StatusRequest:
+    properties:
+      status:
+        type: string
+    type: object
+  internal_transfer.CreateRequest:
+    properties:
+      amount:
+        type: string
+      beneficiaryId:
+        type: string
+      destinationAccountId:
+        type: string
+      purpose:
+        type: string
+      sourceAccountId:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Online banking API. Single currency INR; amounts are decimal strings
+    with 2 places. Authentication uses a session cookie.
+  title: Online Banking Mini Application API
+  version: "1.0"
+paths:
+  /accounts:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: List accounts
+      tags:
+      - accounts
+  /accounts/{accountId}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account UUID
+        in: path
+        name: accountId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Get account
+      tags:
+      - accounts
+  /accounts/{accountId}/transactions:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account UUID
+        in: path
+        name: accountId
+        required: true
+        type: string
+      - description: Transaction type
+        enum:
+        - DEBIT
+        - CREDIT
+        in: query
+        name: type
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Sort field
+        enum:
+        - createdAt
+        - amount
+        - type
+        in: query
+        name: sort
+        type: string
+      - description: Sort direction
+        enum:
+        - ASC
+        - DESC
+        in: query
+        name: direction
+        type: string
+      - description: RFC3339 start time
+        in: query
+        name: from
+        type: string
+      - description: RFC3339 end time
+        in: query
+        name: to
+        type: string
+      - description: Minimum amount
+        in: query
+        name: minAmount
+        type: string
+      - description: Maximum amount
+        in: query
+        name: maxAmount
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: List account transactions
+      tags:
+      - accounts
+  /admin/account-assignments:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Assignment request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_admin.AssignRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      - CSRFToken: []
+      summary: Assign account
+      tags:
+      - admin
+  /admin/audit-events:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Event type
+        in: query
+        name: eventType
+        type: string
+      - description: Actor user UUID
+        in: query
+        name: actorUserId
+        type: string
+      - description: Entity type
+        in: query
+        name: entityType
+        type: string
+      - description: Entity UUID
+        in: query
+        name: entityId
+        type: string
+      - description: Result
+        in: query
+        name: result
+        type: string
+      - description: RFC3339 start time
+        in: query
+        name: from
+        type: string
+      - description: RFC3339 end time
+        in: query
+        name: to
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Search audit events
+      tags:
+      - admin
+  /admin/config/transaction-limit:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Get transaction limit
+      tags:
+      - admin
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Limit request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_admin.LimitRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      - CSRFToken: []
+      summary: Set transaction limit
+      tags:
+      - admin
+  /admin/users:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_admin.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      - CSRFToken: []
+      summary: Create user
+      tags:
+      - admin
+  /admin/users/{userId}/reset-password:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User UUID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Password request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_admin.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      - CSRFToken: []
+      summary: Reset user password
+      tags:
+      - admin
+  /admin/users/{userId}/role:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: User UUID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Role request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_admin.RoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      - CSRFToken: []
+      summary: Change user role
+      tags:
+      - admin
+  /admin/users/{userId}/status:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: User UUID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Status request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_admin.StatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      - CSRFToken: []
+      summary: Set user status
+      tags:
+      - admin
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "429":
+          description: RATE_LIMITED; Retry-After contains seconds until retry
+          headers:
+            Retry-After:
+              type: string
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      summary: Log in
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      - CSRFToken: []
+      summary: Log out
+      tags:
+      - auth
+  /auth/signup:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Signup request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.SignupRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      summary: Sign up
+      tags:
+      - auth
+  /beneficiaries:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: List beneficiaries
+      tags:
+      - beneficiaries
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Beneficiary request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_beneficiary.CreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      - CSRFToken: []
+      summary: Create beneficiary
+      tags:
+      - beneficiaries
+  /beneficiaries/{beneficiaryId}/status:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Beneficiary UUID
+        in: path
+        name: beneficiaryId
+        required: true
+        type: string
+      - description: Status request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_beneficiary.StatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      - CSRFToken: []
+      summary: Update beneficiary status
+      tags:
+      - beneficiaries
+  /me:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Get current user
+      tags:
+      - auth
+  /transfers:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: List transfers
+      tags:
+      - transfers
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Transfer request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transfer.CreateRequest'
+      - description: Unique idempotency key
+        in: header
+        name: Idempotency-Key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "409":
+          description: IDEMPOTENCY_CONFLICT
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "422":
+          description: INSUFFICIENT_FUNDS, ACCOUNT_FROZEN, BENEFICIARY_INACTIVE, TRANSFER_LIMIT_EXCEEDED,
+            VALIDATION_ERROR
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "429":
+          description: RATE_LIMITED; Retry-After contains seconds until retry
+          headers:
+            Retry-After:
+              type: string
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      - CSRFToken: []
+      summary: Create transfer
+      tags:
+      - transfers
+  /transfers/{referenceNumber}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Transfer reference number
+        in: path
+        name: referenceNumber
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Get transfer
+      tags:
+      - transfers
+securityDefinitions:
+  CSRFToken:
+    in: header
+    name: X-CSRF-Token
+    type: apiKey
+  SessionAuth:
+    in: cookie
+    name: session_id
+    type: apiKey
+swagger: "2.0"

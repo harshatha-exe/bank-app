@@ -123,7 +123,7 @@ func (r *TransferRepository) Create(ctx context.Context, userID, correlationID u
 	}
 	var out TransferRecord
 	err = tx.QueryRow(ctx, `INSERT INTO fund_transfers(reference_number,source_account_id,destination_account_id,beneficiary_id,initiated_by,amount,currency,purpose,status,review_status,idempotency_key,completed_at)
-		VALUES($1,$2,$3,NULLIF($4,'00000000-0000-0000-0000-000000000000'),$5,$6,'INR',$7,'COMPLETED','NONE',$8,NOW())
+		VALUES($1,$2,$3,NULLIF($4::uuid,'00000000-0000-0000-0000-000000000000'::uuid),$5,$6,'INR',$7,'COMPLETED','NONE',$8,NOW())
 		RETURNING id,source_account_id,destination_account_id,COALESCE(beneficiary_id,'00000000-0000-0000-0000-000000000000'),initiated_by,reference_number,amount::text,COALESCE(purpose,''),status,currency,created_at`,
 		in.ReferenceNumber, in.SourceAccountID, in.DestinationAccountID, in.BeneficiaryID, userID, fmt.Sprintf("%d.%02d", in.AmountPaise/100, in.AmountPaise%100), in.Purpose, in.IdempotencyKey).
 		Scan(&out.ID, &out.SourceAccountID, &out.DestinationAccountID, &out.BeneficiaryID, &out.InitiatedBy, &out.ReferenceNumber, &out.Amount, &out.Purpose, &out.Status, &out.Currency, &out.CreatedAt)

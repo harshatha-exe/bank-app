@@ -32,3 +32,25 @@ func TestLoadRejectsInvalidTrustedProxy(t *testing.T) {
 		t.Fatal("expected invalid proxy to be rejected")
 	}
 }
+
+func TestLoadSwaggerEnabledDefaultsAndCanBeDisabled(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://localhost/bank")
+	t.Setenv("CSRF_SECRET", "secret")
+	t.Setenv("TRUSTED_PROXIES", "")
+	t.Setenv("SWAGGER_ENABLED", "")
+	config, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !config.SwaggerEnabled {
+		t.Fatal("swagger should be enabled by default")
+	}
+	t.Setenv("SWAGGER_ENABLED", "false")
+	config, err = Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if config.SwaggerEnabled {
+		t.Fatal("swagger should be disabled explicitly")
+	}
+}

@@ -18,6 +18,7 @@ type Config struct {
 	MaxTransferPaise   int64
 	TrustedProxies     []string
 	TransferRateLimit  int
+	SwaggerEnabled     bool
 }
 
 func Load() (Config, error) {
@@ -49,6 +50,7 @@ func Load() (Config, error) {
 		MaxTransferPaise:   envMoneyPaise("MAX_TRANSFER_AMOUNT_INR", 10000000),
 		TrustedProxies:     trustedProxies,
 		TransferRateLimit:  envInt("TRANSFER_RATE_LIMIT", 10),
+		SwaggerEnabled:     envBool("SWAGGER_ENABLED", true),
 	}, nil
 }
 
@@ -105,6 +107,18 @@ func envInt(name string, fallback int) int {
 		var parsed int
 		if _, err := fmt.Sscanf(value, "%d", &parsed); err == nil && parsed > 0 {
 			return parsed
+		}
+	}
+	return fallback
+}
+
+func envBool(name string, fallback bool) bool {
+	if value := strings.TrimSpace(os.Getenv(name)); value != "" {
+		switch strings.ToLower(value) {
+		case "1", "true", "yes":
+			return true
+		case "0", "false", "no":
+			return false
 		}
 	}
 	return fallback
