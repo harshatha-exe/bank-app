@@ -32,13 +32,13 @@ func NewHandler(service *Service, auditService *audit.Service) *Handler {
 // @Param request body CreateRequest true "Transfer request"
 // @Param Idempotency-Key header string true "Unique idempotency key"
 // @Success 201 {object} bank-app-ioc_backend_internal_httpx.Response
-// @Failure 400 {object} bank-app_ioc_backend_internal_httpx.ErrorResponse
-// @Failure 401 {object} bank-app_ioc_backend_internal_httpx.ErrorResponse
-// @Failure 403 {object} bank-app_ioc_backend_internal_httpx.ErrorResponse
-// @Failure 404 {object} bank-app_ioc_backend_internal_httpx.ErrorResponse
-// @Failure 409 {object} bank-app_ioc_backend_internal_httpx.ErrorResponse "IDEMPOTENCY_CONFLICT"
-// @Failure 422 {object} bank-app_ioc_backend_internal_httpx.ErrorResponse "INSUFFICIENT_FUNDS, ACCOUNT_FROZEN, BENEFICIARY_INACTIVE, TRANSFER_LIMIT_EXCEEDED, VALIDATION_ERROR"
-// @Failure 429 {object} bank-app_ioc_backend_internal_httpx.ErrorResponse "RATE_LIMITED; Retry-After contains seconds until retry"
+// @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 404 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 409 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse "IDEMPOTENCY_CONFLICT"
+// @Failure 422 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse "INSUFFICIENT_FUNDS, ACCOUNT_FROZEN, BENEFICIARY_INACTIVE, TRANSFER_LIMIT_EXCEEDED, VALIDATION_ERROR"
+// @Failure 429 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse "RATE_LIMITED; Retry-After contains seconds until retry"
 // @Header 429 {string} Retry-After
 // @Security SessionAuth
 // @Security CSRFToken
@@ -51,6 +51,10 @@ func (h *Handler) Create(c *gin.Context) {
 	}
 
 	var req CreateRequest
+	if err := httpx.BindJSON(c, &req); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
 
 	data, _, err := h.service.Create(
 		c,
@@ -126,9 +130,9 @@ func transferFailureCode(err error) string {
 // @Accept json
 // @Produce json
 // @Param referenceNumber path string true "Transfer reference number"
-// @Success 200 {object} bank-app_ioc_backend_internal_httpx.Response
-// @Failure 401 {object} bank-app_ioc_backend_internal_httpx.ErrorResponse
-// @Failure 404 {object} bank-app_ioc_backend_internal_httpx.ErrorResponse
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 404 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Security SessionAuth
 // @Router /transfers/{referenceNumber} [get]
 func (h *Handler) Get(c *gin.Context) {
@@ -191,9 +195,9 @@ func (h *Handler) Get(c *gin.Context) {
 // @Produce json
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Page size"
-// @Success 200 {object} bank-app_ioc_backend_internal_httpx.Response
-// @Failure 400 {object} bank-app_ioc_backend_internal_httpx.ErrorResponse
-// @Failure 401 {object} bank-app_ioc_backend_internal_httpx.ErrorResponse
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Security SessionAuth
 // @Router /transfers [get]
 func (h *Handler) List(c *gin.Context) {
