@@ -1,11 +1,10 @@
 package middleware
 
 import (
-	"errors"
-	"log"
-
 	"bank-app-ioc/backend/internal/apperr"
+	"errors"
 	"github.com/gin-gonic/gin"
+	"log/slog"
 )
 
 // ErrorHandler runs AFTER the handler (code below c.Next()). It is the only
@@ -26,7 +25,7 @@ func ErrorHandler() gin.HandlerFunc {
 
 		cid := c.GetString("correlation_id")
 		if appErr.Cause != nil { // real reason stays in OUR logs only
-			log.Printf("request error correlation_id=%s route=%q cause=%q", cid, c.FullPath(), appErr.Cause.Error())
+			slog.ErrorContext(c.Request.Context(), "request error", "correlation_id", cid, "route", c.FullPath(), "cause", appErr.Cause.Error())
 		}
 
 		body := gin.H{"code": appErr.Code, "message": appErr.Message, "correlationId": cid}

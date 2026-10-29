@@ -6,9 +6,17 @@ import (
 	"net/http"
 	"time"
 
+	"bank-app-ioc/backend/internal/telemetry"
+	"errors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"log/slog"
+	"os"
+	"os/signal"
+	"sync/atomic"
+	"syscall"
 
 	"bank-app-ioc/backend/config"
 	"bank-app-ioc/backend/database"
@@ -37,6 +45,7 @@ import (
 // @in header
 // @name X-CSRF-Token
 func main() {
+	telemetry.InitLogger()
 	appConfig, err := config.Load()
 	if err != nil {
 		log.Fatal("configuration error")
@@ -47,7 +56,10 @@ func main() {
 		log.Fatal("database connection failed")
 	}
 	defer pool.Close()
-
+	shutdownTelemetry, err := telemetry.Setup(context.Background(), "bank-api", "1.0.0")
+	if err != nil {
+		log.Fatal("telemetry setup failed")
+	}
 	sessionRepository := repository.NewSessionRepository(pool)
 	userRepository := repository.NewUserRepository(pool)
 	authService := auth.NewService(userRepository, sessionRepository, appConfig.SessionIdleTimeout, appConfig.SessionMaxLifetime, appConfig.PasswordMinLength)
@@ -56,7 +68,15 @@ func main() {
 	if err := router.SetTrustedProxies(appConfig.TrustedProxies); err != nil {
 		log.Fatal("invalid trusted proxies configuration")
 	}
-	router.Use(middleware.CorrelationID(), middleware.Logging(), middleware.Recovery(), middleware.SecurityHeaders(), middleware.ErrorHandler(), middleware.NewRateLimiterWithClock(5, time.Minute, time.Now, auditService).Handler())
+	authLimiter := middleware.NewRateLimiterWithClock(5, time.Minute, time.Now, auditService)
+	defer authLimiter.Stop()
+	router.Use(
+		otelgin.Middleware("bank-api", otelgin.WithFilter(func(r *http.Request) bool {
+			return r.URL.Path != "/health" && r.URL.Path != "/ready" // don't trace probes
+		})),
+		middleware.CorrelationID(), middleware.Logging(), telemetry.HTTPMetrics(), middleware.Recovery(),
+		middleware.SecurityHeaders(), middleware.ErrorHandler(), authLimiter.Handler(),
+	)
 	router.NoRoute(func(c *gin.Context) { httpx.Fail(c, apperr.NotFound()) })
 	if appConfig.SwaggerEnabled {
 		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -76,6 +96,16 @@ func main() {
 	operationsHandler := operations.NewHandler(operations.NewService(repository.NewAccountRepository(pool), repository.NewAssignmentRepository(pool), repository.NewTransferRepository(pool)), auditService)
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+	var draining atomic.Bool
+	router.GET("/ready", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+		defer cancel()
+		if draining.Load() || pool.Ping(ctx) != nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unavailable"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "ready"})
 	})
 	router.POST("/api/auth/signup", authHandler.Signup)
 	router.POST("/api/auth/login", authHandler.Login)
@@ -111,8 +141,38 @@ func main() {
 	adminRoutes.PATCH("/config/transaction-limit", adminHandler.SetLimit)
 	adminRoutes.GET("/audit-events", adminHandler.SearchAudit)
 
-	log.Printf("server listening on :%s", appConfig.Port)
-	if err := router.Run(":" + appConfig.Port); err != nil {
-		log.Fatal("server stopped unexpectedly")
+	srv := &http.Server{
+		Addr:              ":" + appConfig.Port,
+		Handler:           router,
+		ReadHeaderTimeout: 5 * time.Second, // blocks slowloris
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    1 << 16,
 	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	go func() {
+		slog.Info("server listening", "port", appConfig.Port)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("server failed", "error", err)
+			stop() // fall into the shutdown path below
+		}
+	}()
+
+	<-ctx.Done() // Ctrl+C, SIGTERM (docker stop / deploy), or server failure
+	slog.Info("shutting down")
+	draining.Store(true) // /ready flips to 503 so a load balancer drains us
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil { // stop accepting, finish in-flight transfers
+		slog.Error("graceful shutdown failed", "error", err)
+	}
+	if err := shutdownTelemetry(shutdownCtx); err != nil { // flush buffered spans/metrics
+		slog.Error("telemetry flush failed", "error", err)
+	}
+	// deferred limiter Stop() and pool.Close() run when main returns, AFTER requests finish
 }

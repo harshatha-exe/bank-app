@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -22,6 +24,8 @@ type Config struct {
 }
 
 func Load() (Config, error) {
+	_ = godotenv.Load()
+
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
 		return Config{}, fmt.Errorf("DATABASE_URL is required")
@@ -31,10 +35,12 @@ func Load() (Config, error) {
 	if port == "" {
 		port = "8080"
 	}
+
 	csrfSecret := os.Getenv("CSRF_SECRET")
 	if csrfSecret == "" {
 		return Config{}, fmt.Errorf("CSRF_SECRET is required")
 	}
+
 	trustedProxies, err := envTrustedProxies()
 	if err != nil {
 		return Config{}, err
@@ -59,37 +65,47 @@ func envTrustedProxies() ([]string, error) {
 	if value == "" {
 		return nil, nil
 	}
+
 	var proxies []string
+
 	for _, entry := range strings.Split(value, ",") {
 		entry = strings.TrimSpace(entry)
+
 		if entry == "" {
 			return nil, fmt.Errorf("TRUSTED_PROXIES contains an empty entry")
 		}
+
 		if entry == "0.0.0.0/0" || entry == "::/0" {
 			return nil, fmt.Errorf("TRUSTED_PROXIES must not trust all addresses")
 		}
+
 		if ip := net.ParseIP(entry); ip == nil {
 			_, network, err := net.ParseCIDR(entry)
 			if err != nil {
 				return nil, fmt.Errorf("invalid TRUSTED_PROXIES entry %q", entry)
 			}
+
 			ones, _ := network.Mask.Size()
 			if ones == 0 && network.IP.IsUnspecified() {
 				return nil, fmt.Errorf("TRUSTED_PROXIES must not trust all addresses")
 			}
 		}
+
 		proxies = append(proxies, entry)
 	}
+
 	return proxies, nil
 }
 
 func envMoneyPaise(name string, fallback int64) int64 {
 	if value := os.Getenv(name); value != "" {
 		var whole int64
+
 		if _, err := fmt.Sscanf(value, "%d", &whole); err == nil && whole > 0 {
 			return whole * 100
 		}
 	}
+
 	return fallback
 }
 
@@ -99,16 +115,19 @@ func envDuration(name string, fallback time.Duration) time.Duration {
 			return parsed
 		}
 	}
+
 	return fallback
 }
 
 func envInt(name string, fallback int) int {
 	if value := os.Getenv(name); value != "" {
 		var parsed int
+
 		if _, err := fmt.Sscanf(value, "%d", &parsed); err == nil && parsed > 0 {
 			return parsed
 		}
 	}
+
 	return fallback
 }
 
@@ -121,5 +140,6 @@ func envBool(name string, fallback bool) bool {
 			return false
 		}
 	}
+
 	return fallback
 }
