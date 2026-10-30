@@ -59,7 +59,7 @@ func testPool(t *testing.T) *pgxpool.Pool {
 type fixture struct {
 	pool                 *pgxpool.Pool
 	router               *gin.Engine
-	user                 uuid.UUID
+	user, destUser       uuid.UUID
 	account, destination uuid.UUID
 	name                 string
 }
@@ -93,7 +93,7 @@ func newRouter(t *testing.T, pool *pgxpool.Pool) *gin.Engine {
 
 func newFixture(t *testing.T) *fixture {
 	pool := testPool(t)
-	f := &fixture{pool: pool, name: "security-" + uuid.NewString(), user: uuid.New()}
+	f := &fixture{pool: pool, name: "security-" + uuid.NewString(), user: uuid.New(), destUser: uuid.New()}
 	hash, err := auth.HashPassword("fixture-password-123")
 	if err != nil {
 		t.Fatal(err)
@@ -105,25 +105,33 @@ func newFixture(t *testing.T) *fixture {
 	if _, err = pool.Exec(context.Background(), `INSERT INTO customers(id,user_id,customer_number,full_name) VALUES($1,$2,$3,'Security Fixture')`, customer, f.user, "CUST-"+uuid.NewString()[:16]); err != nil {
 		t.Fatal(err)
 	}
+	destName := f.name + "-dest"
+	if _, err = pool.Exec(context.Background(), `INSERT INTO users(id,username,password_hash,role_id,status) SELECT $1,$2,$3,id,'ACTIVE' FROM roles WHERE name='CUSTOMER'`, f.destUser, destName, hash); err != nil {
+		t.Fatal(err)
+	}
+	destCustomer := uuid.New()
+	if _, err = pool.Exec(context.Background(), `INSERT INTO customers(id,user_id,customer_number,full_name) VALUES($1,$2,$3,'Security Fixture Destination')`, destCustomer, f.destUser, "CUST-"+uuid.NewString()[:16]); err != nil {
+		t.Fatal(err)
+	}
 	f.account, f.destination = uuid.New(), uuid.New()
-	for _, row := range [][2]string{{f.account.String(), "S" + uuid.NewString()[:20]}, {f.destination.String(), "S" + uuid.NewString()[:20]}} {
-		uid, _ := uuid.Parse(row[0])
-		if _, err = pool.Exec(context.Background(), `INSERT INTO bank_accounts(id,customer_id,account_number,account_type,balance,currency,status) VALUES($1,$2,$3,'SAVINGS',1000,'INR','ACTIVE')`, uid, customer, row[1]); err != nil {
-			t.Fatal(err)
-		}
+	if _, err = pool.Exec(context.Background(), `INSERT INTO bank_accounts(id,customer_id,account_number,account_type,balance,currency,status) VALUES($1,$2,$3,'SAVINGS',1000,'INR','ACTIVE')`, f.account, customer, "S"+uuid.NewString()[:20]); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = pool.Exec(context.Background(), `INSERT INTO bank_accounts(id,customer_id,account_number,account_type,balance,currency,status) VALUES($1,$2,$3,'SAVINGS',1000,'INR','ACTIVE')`, f.destination, destCustomer, "S"+uuid.NewString()[:20]); err != nil {
+		t.Fatal(err)
 	}
 	f.router = newRouter(t, pool)
 	t.Cleanup(func() {
 		ctx := context.Background()
-		_, _ = pool.Exec(ctx, `DELETE FROM audit_events WHERE actor_user_id=$1`, f.user)
-		_, _ = pool.Exec(ctx, `DELETE FROM transactions WHERE transfer_id IN (SELECT id FROM fund_transfers WHERE initiated_by=$1)`, f.user)
-		_, _ = pool.Exec(ctx, `DELETE FROM ledger_entries WHERE transfer_id IN (SELECT id FROM fund_transfers WHERE initiated_by=$1)`, f.user)
-		_, _ = pool.Exec(ctx, `DELETE FROM fund_transfers WHERE initiated_by=$1`, f.user)
-		_, _ = pool.Exec(ctx, `DELETE FROM beneficiaries WHERE customer_id IN (SELECT id FROM customers WHERE user_id=$1)`, f.user)
-		_, _ = pool.Exec(ctx, `DELETE FROM sessions WHERE user_id=$1`, f.user)
+		_, _ = pool.Exec(ctx, `DELETE FROM audit_events WHERE actor_user_id IN ($1,$2)`, f.user, f.destUser)
+		_, _ = pool.Exec(ctx, `DELETE FROM transactions WHERE transfer_id IN (SELECT id FROM fund_transfers WHERE initiated_by IN ($1,$2))`, f.user, f.destUser)
+		_, _ = pool.Exec(ctx, `DELETE FROM ledger_entries WHERE transfer_id IN (SELECT id FROM fund_transfers WHERE initiated_by IN ($1,$2))`, f.user, f.destUser)
+		_, _ = pool.Exec(ctx, `DELETE FROM fund_transfers WHERE initiated_by IN ($1,$2)`, f.user, f.destUser)
+		_, _ = pool.Exec(ctx, `DELETE FROM beneficiaries WHERE customer_id IN (SELECT id FROM customers WHERE user_id IN ($1,$2))`, f.user, f.destUser)
+		_, _ = pool.Exec(ctx, `DELETE FROM sessions WHERE user_id IN ($1,$2)`, f.user, f.destUser)
 		_, _ = pool.Exec(ctx, `DELETE FROM bank_accounts WHERE id IN ($1,$2)`, f.account, f.destination)
-		_, _ = pool.Exec(ctx, `DELETE FROM customers WHERE user_id=$1`, f.user)
-		_, _ = pool.Exec(ctx, `DELETE FROM users WHERE id=$1`, f.user)
+		_, _ = pool.Exec(ctx, `DELETE FROM customers WHERE user_id IN ($1,$2)`, f.user, f.destUser)
+		_, _ = pool.Exec(ctx, `DELETE FROM users WHERE id IN ($1,$2)`, f.user, f.destUser)
 	})
 	return f
 }

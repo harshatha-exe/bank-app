@@ -146,7 +146,17 @@ func TestBeneficiariesTransfersAndValidation(t *testing.T) {
 	}
 	data := responseData(t, rec)
 	beneficiaryID, ok := data["id"].(string)
-	if !ok || data["destinationAccountMasked"] == "apitest-200000000001" || !strings.Contains(rec.Body.String(), "<img src=x onerror=alert(1)>") {
+	twoAccountNumber := f.twoAccountNumber
+	if twoAccountNumber == "" {
+		if err := f.pool.QueryRow(context.Background(), "SELECT account_number FROM bank_accounts WHERE id=$1", f.twoAccount).Scan(&twoAccountNumber); err != nil {
+			t.Fatal(err)
+		}
+	}
+	last4 := twoAccountNumber[len(twoAccountNumber)-4:]
+	expectedMasked := "******" + last4
+	masked, _ := data["destinationAccountMasked"].(string)
+	nickname, _ := data["nickname"].(string)
+	if !ok || masked != expectedMasked || masked == twoAccountNumber || nickname != "<img src=x onerror=alert(1)>" {
 		t.Fatalf("unexpected beneficiary response: %s", rec.Body.String())
 	}
 	if duplicate := request(t, f.router, http.MethodPost, "/api/beneficiaries", body, cookie, csrf); duplicate.Code != http.StatusConflict {

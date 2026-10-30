@@ -66,6 +66,7 @@ type fixture struct {
 	oneName, twoName, opsName, adminName string
 	one, two, ops, admin                 uuid.UUID
 	oneAccount, twoAccount, destination  uuid.UUID
+	twoAccountNumber                     string
 }
 
 func newRouter(t *testing.T, pool *pgxpool.Pool) (*gin.Engine, *auth.Service) {
@@ -232,7 +233,8 @@ func newFixture(t *testing.T) *fixture {
 	f.admin = createStaff(t, f, f.adminName, "ADMIN")
 	f.oneAccount = createAccount(t, f, f.one, "A"+uuid.NewString()[:20], "10000.00")
 	f.destination = createAccount(t, f, f.one, "A"+uuid.NewString()[:20], "1000.00")
-	f.twoAccount = createAccount(t, f, f.two, "A"+uuid.NewString()[:20], "5000.00")
+	f.twoAccountNumber = "A" + uuid.NewString()[:20]
+	f.twoAccount = createAccount(t, f, f.two, f.twoAccountNumber, "5000.00")
 	if _, err := pool.Exec(context.Background(), `INSERT INTO account_assignments(user_id,account_id,assigned_by) VALUES($1,$2,$3)`, f.ops, f.oneAccount, f.admin); err != nil {
 		t.Fatal(err)
 	}
