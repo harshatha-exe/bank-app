@@ -56,6 +56,9 @@ func TestServiceValidationAndIdempotency(t *testing.T) {
 	}{
 		{"same account", CreateRequest{SourceAccountID: uuid.Nil, DestinationAccountID: uuid.Nil, Amount: "10.00"}},
 		{"invalid amount", func() CreateRequest { r := validRequest(); r.Amount = "1.001"; return r }()},
+		{"zero amount", func() CreateRequest { r := validRequest(); r.Amount = "0"; return r }()},
+		{"negative amount", func() CreateRequest { r := validRequest(); r.Amount = "-5.00"; return r }()},
+		{"non-numeric amount", func() CreateRequest { r := validRequest(); r.Amount = "not-a-number"; return r }()},
 		{"limit exceeded", func() CreateRequest { r := validRequest(); r.Amount = "100.01"; return r }()},
 	}
 	for _, tc := range cases {
