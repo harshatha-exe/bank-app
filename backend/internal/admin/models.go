@@ -42,13 +42,18 @@ type AuditQuery struct {
 	EventType, ActorUserID, EntityType, EntityID, Result, From, To, Page, PageSize string
 }
 
+type UserQuery struct {
+	Search, Role, Status, Page, PageSize string
+}
+
 // ---------- responses ----------
 
 type UserDTO struct {
-	ID       uuid.UUID `json:"id"`
-	Username string    `json:"username"`
-	Role     string    `json:"role"`
-	Status   string    `json:"status"`
+	ID        uuid.UUID `json:"id"`
+	Username  string    `json:"username"`
+	Role      string    `json:"role"`
+	Status    string    `json:"status"`
+	CreatedAt string    `json:"createdAt"`
 }
 type AssignmentDTO struct {
 	ID               uuid.UUID `json:"id"`
@@ -196,4 +201,26 @@ func (q AuditQuery) clean() (repository.AuditFilter, int, int, error) {
 		return repository.AuditFilter{}, 0, 0, err
 	}
 	return f, page, size, nil
+}
+
+func (q UserQuery) clean() (repository.UserFilter, int, int, error) {
+	v := validate.New()
+	search := strings.TrimSpace(q.Search)
+	v.Check(validate.RuneLen(search, 0, 100), "search", "Search must be at most 100 characters.")
+	role := validate.Upper(q.Role)
+	if role != "" {
+		v.Check(validate.OneOf(role, "CUSTOMER", "OPERATIONS", "ADMIN"), "role", "Role is invalid.")
+	}
+	status := validate.Upper(q.Status)
+	if status != "" {
+		v.Check(validate.OneOf(status, "ACTIVE", "DEACTIVATED"), "status", "Status is invalid.")
+	}
+	page, okPage := intParam(q.Page, 1, 1, 100000)
+	size, okSize := intParam(q.PageSize, 25, 1, 100)
+	v.Check(okPage, "page", "Must be between 1 and 100000.")
+	v.Check(okSize, "pageSize", "Must be between 1 and 100.")
+	if err := v.Err(); err != nil {
+		return repository.UserFilter{}, 0, 0, err
+	}
+	return repository.UserFilter{Search: search, Role: role, Status: status}, page, size, nil
 }

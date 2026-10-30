@@ -23,6 +23,12 @@ type AuditPage struct {
 	Size        int
 }
 
+type UserPage struct {
+	Users      []UserDTO
+	Total, Page int
+	Size       int
+}
+
 type Service struct {
 	users       *repository.AdminRepository
 	assignments *repository.AssignmentRepository
@@ -74,6 +80,22 @@ func (s *Service) CreateUser(ctx context.Context, actor uuid.UUID, req CreateUse
 		return UserDTO{}, mapUserErr(err)
 	}
 	return UserDTO{ID: u.ID, Username: u.Username, Role: u.Role, Status: u.Status}, nil
+}
+
+func (s *Service) ListUsers(ctx context.Context, q UserQuery) (UserPage, error) {
+	filter, page, size, err := q.clean()
+	if err != nil {
+		return UserPage{}, err
+	}
+	rows, total, err := s.users.ListUsers(ctx, filter, page, size)
+	if err != nil {
+		return UserPage{}, err
+	}
+	users := make([]UserDTO, 0, len(rows))
+	for _, user := range rows {
+		users = append(users, UserDTO{ID: user.ID, Username: user.Username, Role: user.Role, Status: user.Status, CreatedAt: user.CreatedAt.UTC().Format(time.RFC3339)})
+	}
+	return UserPage{Users: users, Total: total, Page: page, Size: size}, nil
 }
 
 func (s *Service) SetStatus(ctx context.Context, actor, target uuid.UUID, req StatusRequest, m RequestMeta) (string, error) {

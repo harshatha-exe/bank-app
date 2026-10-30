@@ -413,6 +413,54 @@ paths:
       tags:
       - admin
   /admin/users:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Username substring
+        in: query
+        name: search
+        type: string
+      - description: User role
+        in: query
+        name: role
+        type: string
+      - description: User status
+        in: query
+        name: status
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: List users
+      tags:
+      - admin
     post:
       consumes:
       - application/json

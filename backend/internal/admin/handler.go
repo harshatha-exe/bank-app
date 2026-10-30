@@ -1,17 +1,26 @@
 package admin
 
 import (
+	"context"
 	"net/http"
 
 	"bank-app-ioc/backend/internal/apperr"
 	"bank-app-ioc/backend/internal/httpx"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
-type Handler struct{ svc *Service }
+type userLister interface {
+	ListUsers(ctx context.Context, q UserQuery) (UserPage, error)
+}
 
-func NewHandler(svc *Service) *Handler { return &Handler{svc: svc} }
+type Handler struct {
+	svc   *Service
+	users userLister
+}
+
+func NewHandler(svc *Service) *Handler { return &Handler{svc: svc, users: svc} }
 
 func reqMeta(c *gin.Context) RequestMeta {
 	return RequestMeta{IP: c.ClientIP(), CorrelationID: httpx.CorrelationID(c)}
@@ -67,6 +76,39 @@ func (h *Handler) CreateUser(c *gin.Context) {
 		return
 	}
 	httpx.OK(c, http.StatusCreated, u, nil)
+}
+
+// ListUsers lists users for admin discovery and management.
+// @Summary List users
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param search query string false "Username substring"
+// @Param role query string false "User role"
+// @Param status query string false "User status"
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Page size"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
+// @Security SessionAuth
+// @Router /admin/users [get]
+func (h *Handler) ListUsers(c *gin.Context) {
+	q := UserQuery{Search: c.Query("search"), Role: c.Query("role"), Status: c.Query("status"), Page: c.Query("page"), PageSize: c.Query("pageSize")}
+	if _, _, _, err := q.clean(); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	res, err := h.users.ListUsers(c.Request.Context(), q)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, http.StatusOK, res.Users, gin.H{
+		"page": res.Page, "pageSize": res.Size, "totalItems": res.Total,
+		"totalPages": (res.Total + res.Size - 1) / res.Size,
+	})
 }
 
 // SetStatus changes a user's status.

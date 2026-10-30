@@ -8,15 +8,16 @@ import (
 
 	"bank-app-ioc/backend/internal/telemetry"
 	"errors"
-	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"log/slog"
 	"os"
 	"os/signal"
 	"sync/atomic"
 	"syscall"
+
+	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
 	"bank-app-ioc/backend/config"
 	"bank-app-ioc/backend/database"
@@ -133,6 +134,7 @@ func main() {
 	ops.POST("/accounts/:accountId/unfreeze", operationsHandler.Unfreeze)
 	adminRoutes := protected.Group("/admin", middleware.AdminOnly(auditService))
 	adminRoutes.POST("/users", adminHandler.CreateUser)
+	adminRoutes.GET("/users", adminHandler.ListUsers)
 	adminRoutes.PATCH("/users/:userId/status", adminHandler.SetStatus)
 	adminRoutes.PATCH("/users/:userId/role", adminHandler.ChangeRole)
 	adminRoutes.POST("/users/:userId/reset-password", adminHandler.ResetPassword)

@@ -3,7 +3,9 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -18,13 +20,65 @@ var (
 type AdminRepository struct{ pool *pgxpool.Pool }
 
 type AdminUser struct {
-	ID       uuid.UUID
-	Username string
-	Role     string
-	Status   string
+	ID        uuid.UUID
+	Username  string
+	Role      string
+	Status    string
+	CreatedAt time.Time
+}
+
+type UserFilter struct {
+	Search, Role, Status string
 }
 
 func NewAdminRepository(pool *pgxpool.Pool) *AdminRepository { return &AdminRepository{pool: pool} }
+
+func (r *AdminRepository) ListUsers(ctx context.Context, f UserFilter, page, size int) ([]AdminUser, int, error) {
+	conds := []string{"TRUE"}
+	args := []any{}
+	add := func(format string, value any) {
+		args = append(args, value)
+		conds = append(conds, fmt.Sprintf(format, len(args)))
+	}
+	if f.Search != "" {
+		add("POSITION(LOWER($%d) IN LOWER(username)) > 0", f.Search)
+	}
+	if f.Role != "" {
+		add("r.name = $%d", f.Role)
+	}
+	if f.Status != "" {
+		add("u.status = $%d", f.Status)
+	}
+	where := strings.Join(conds, " AND ")
+
+	var total int
+	if err := r.pool.QueryRow(ctx, "SELECT count(*) FROM users u JOIN roles r ON r.id = u.role_id WHERE "+where, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	args = append(args, size, (page-1)*size)
+	query := fmt.Sprintf(`
+		SELECT u.id, u.username, r.name, u.status, u.created_at
+		  FROM users u JOIN roles r ON r.id = u.role_id
+		 WHERE %s
+		 ORDER BY u.username ASC, u.id ASC
+		 LIMIT $%d OFFSET $%d`, where, len(args)-1, len(args))
+	rows, err := r.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	users := []AdminUser{}
+	for rows.Next() {
+		var user AdminUser
+		if err := rows.Scan(&user.ID, &user.Username, &user.Role, &user.Status, &user.CreatedAt); err != nil {
+			return nil, 0, err
+		}
+		users = append(users, user)
+	}
+	return users, total, rows.Err()
+}
 
 // lockUserRole locks the user's row (so two admins can't race) and returns their role.
 func lockUserRole(ctx context.Context, tx pgx.Tx, id uuid.UUID) (string, error) {

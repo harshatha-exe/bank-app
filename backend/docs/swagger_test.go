@@ -41,7 +41,7 @@ func TestSwaggerDocumentServedAndCoversAPI(t *testing.T) {
 		{"GET", "/accounts"}, {"GET", "/accounts/:accountId"}, {"GET", "/accounts/:accountId/transactions"},
 		{"POST", "/admin/account-assignments"}, {"GET", "/admin/audit-events"},
 		{"GET", "/admin/config/transaction-limit"}, {"PATCH", "/admin/config/transaction-limit"},
-		{"POST", "/admin/users"}, {"POST", "/admin/users/:userId/reset-password"},
+		{"GET", "/admin/users"}, {"POST", "/admin/users"}, {"POST", "/admin/users/:userId/reset-password"},
 		{"PATCH", "/admin/users/:userId/role"}, {"PATCH", "/admin/users/:userId/status"},
 		{"POST", "/auth/login"}, {"POST", "/auth/logout"}, {"POST", "/auth/signup"}, {"GET", "/me"},
 		{"GET", "/beneficiaries"}, {"POST", "/beneficiaries"},

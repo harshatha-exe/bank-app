@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { patch, post } from '../../api'
-import { Alert, Card, Chip, CopyButton, Empty, Field, PageHeader, Tip } from '../../components/ui.jsx'
+import { get } from '../../api'
+import { Alert, Card, Chip, ConfirmDialog, CopyButton, Empty, Field, IdCell, Loading, PageHeader, Pager, useLoad } from '../../components/ui.jsx'
 import { titleCase } from '../../format'
 
 const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+const EMPTY_FILTERS = { search: '', role: '', status: '' }
 
 export default function AdminUsers() {
   const [form, setForm] = useState({ username: '', role: 'CUSTOMER', temporaryPassword: '', fullName: '' })
@@ -14,6 +16,14 @@ export default function AdminUsers() {
   const [manageMsg, setManageMsg] = useState('')
   const [manageError, setManageError] = useState(null)
   const [mBusy, setMBusy] = useState('')
+  const [draft, setDraft] = useState(EMPTY_FILTERS)
+  const [applied, setApplied] = useState(EMPTY_FILTERS)
+  const [page, setPage] = useState(1)
+  const [confirm, setConfirm] = useState('')
+  const { loading, data, meta, error, reload } = useLoad(
+    () => get('/admin/users', { search: applied.search, role: applied.role, status: applied.status, page, pageSize: 15 }),
+    [page, applied],
+  )
 
   const fe = (k) => createError && createError.fields && createError.fields[k]
   const customer = form.role === 'CUSTOMER'
@@ -28,21 +38,25 @@ export default function AdminUsers() {
       const res = await post('/admin/users', body)
       setCreated([res.data, ...created])
       setForm({ ...form, username: '', temporaryPassword: '', fullName: '' })
+      reload()
     } catch (err) {
       setCreateError(err)
     }
     setCreating(false)
   }
 
-  async function act(kind, fn, okText) {
+  async function act(kind) {
     setMBusy(kind)
     setManageError(null)
     setManageMsg('')
     try {
-      await fn()
-      setManageMsg(okText)
-      if (kind !== 'password') setCreated((list) => list.map((u) => (u.id === manage.userId.trim() ? { ...u, ...(kind === 'status' ? { status: manage.status } : { role: manage.role }) } : u)))
+      if (kind === 'status') await patch(`/admin/users/${id}/status`, { status: manage.status })
+      if (kind === 'role') await patch(`/admin/users/${id}/role`, { role: manage.role })
+      if (kind === 'password') await post(`/admin/users/${id}/reset-password`, { newPassword: manage.newPassword })
+      setManageMsg(kind === 'status' ? 'Status updated.' : kind === 'role' ? 'Role updated.' : 'Password reset.')
       if (kind === 'password') setManage((m) => ({ ...m, newPassword: '' }))
+      setConfirm('')
+      reload()
     } catch (err) {
       setManageError(err)
     }
@@ -51,6 +65,14 @@ export default function AdminUsers() {
 
   const id = manage.userId.trim()
   const idOk = UUID_RE.test(id)
+  const protectedUser = manage.role === 'ADMIN' && !!manage.username
+  const setFilter = (key) => (e) => setDraft({ ...draft, [key]: e.target.value.trim() })
+  const selectUser = (user) => {
+    setManage({ userId: user.id, username: user.username, status: user.status, role: user.role, newPassword: '' })
+    setManageMsg('')
+    setManageError(null)
+  }
+  const confirmTitle = confirm === 'status' ? `${manage.status === 'DEACTIVATED' ? 'Deactivate' : 'Activate'} ${manage.username || id}?` : confirm === 'role' ? `Change ${manage.username || id}'s role?` : `Reset ${manage.username || id}'s password?`
   return (
     <>
       <PageHeader title="Users" subtitle="Create staff and customer logins, and manage existing ones." />
@@ -59,8 +81,8 @@ export default function AdminUsers() {
           <Card title="Create a user">
             <form className="stack" onSubmit={create} noValidate>
               <Alert error={createError && !createError.fields ? createError : null} />
-              <Field label="Username" htmlFor="u-name" error={fe('username')}><input id="u-name" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} autoComplete="off" /></Field>
-              <Field label="Role" htmlFor="u-role" error={fe('role')} hint="Administrators cannot be created here.">
+              <Field label="Create username" htmlFor="u-name" error={fe('username')}><input id="u-name" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} autoComplete="off" /></Field>
+              <Field label="Create role" htmlFor="u-role" error={fe('role')} hint="Administrators cannot be created here.">
                 <select id="u-role" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
                   <option value="CUSTOMER">Customer</option><option value="OPERATIONS">Operations</option>
                 </select>
@@ -93,28 +115,61 @@ export default function AdminUsers() {
           </Card>
         </div>
         <div>
+          <Card title="Find users" flush>
+            <form className="filters" onSubmit={(e) => { e.preventDefault(); setPage(1); setApplied(draft) }}>
+              <Field label="Find username" htmlFor="find-search"><input id="find-search" value={draft.search} onChange={setFilter('search')} /></Field>
+              <Field label="Find role" htmlFor="find-role">
+                <select id="find-role" value={draft.role} onChange={setFilter('role')}><option value="">Any</option><option value="CUSTOMER">Customer</option><option value="OPERATIONS">Operations</option><option value="ADMIN">Admin</option></select>
+              </Field>
+              <Field label="Find status" htmlFor="find-status">
+                <select id="find-status" value={draft.status} onChange={setFilter('status')}><option value="">Any</option><option value="ACTIVE">Active</option><option value="DEACTIVATED">Deactivated</option></select>
+              </Field>
+              <div className="filter-actions">
+                <button className="btn btn-primary">Apply</button>
+                <button type="button" className="btn btn-quiet" onClick={() => { setDraft(EMPTY_FILTERS); setApplied(EMPTY_FILTERS); setPage(1) }}>Clear</button>
+              </div>
+            </form>
+            <Alert error={error} />
+            {loading ? <Loading /> : data && data.length === 0 ? <Empty title="No users match" /> : data && (
+              <div className="table-wrap">
+                <table className="table">
+                  <thead><tr><th>Username</th><th>Role</th><th>Status</th><th>User ID</th><th></th></tr></thead>
+                  <tbody>{data.map((user) => (
+                    <tr key={user.id}>
+                      <td className="strong">{user.username}</td><td>{titleCase(user.role)}</td><td><Chip value={user.status} /></td>
+                      <td><IdCell id={user.id} /></td><td className="num"><button className="btn btn-quiet btn-sm" onClick={() => selectUser(user)}>Select</button></td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
+            )}
+            <Pager meta={meta} onPage={setPage} />
+          </Card>
           <Card title="Manage a user">
             <div className="stack">
               <Alert kind="ok">{manageMsg}</Alert>
               <Alert error={manageError} />
+              {manage.username && <div className="strong">Selected user: {manage.username}</div>}
               <Field label="User ID" htmlFor="m-id" error={id && !idOk ? 'A user ID is 36 characters with dashes.' : ''}><input id="m-id" value={manage.userId} onChange={(e) => setManage({ ...manage, userId: e.target.value })} spellCheck="false" /></Field>
-              <Field label="Status" htmlFor="m-st">
-                <select id="m-st" value={manage.status} onChange={(e) => setManage({ ...manage, status: e.target.value })}><option value="ACTIVE">Active</option><option value="DEACTIVATED">Deactivated</option></select>
+              <Field label="Manage status" htmlFor="m-st">
+                {protectedUser ? <div id="m-st">{titleCase(manage.status)} (protected)</div> : <select id="m-st" value={manage.status} onChange={(e) => setManage({ ...manage, status: e.target.value })}><option value="ACTIVE">Active</option><option value="DEACTIVATED">Deactivated</option></select>}
               </Field>
-              <button className="btn btn-quiet" disabled={!idOk || mBusy} onClick={() => act('status', () => patch(`/admin/users/${id}/status`, { status: manage.status }), 'Status updated.')}>Update status</button>
-              <Field label="Role" htmlFor="m-role">
-                <select id="m-role" value={manage.role} onChange={(e) => setManage({ ...manage, role: e.target.value })}><option value="CUSTOMER">Customer</option><option value="OPERATIONS">Operations</option></select>
+              <button className="btn btn-quiet" disabled={!idOk || !!mBusy || protectedUser} onClick={() => { setManageError(null); setConfirm('status') }}>Update status</button>
+              <Field label="Manage role" htmlFor="m-role">
+                {protectedUser ? <div id="m-role">{titleCase(manage.role)} (protected)</div> : <select id="m-role" value={manage.role} onChange={(e) => setManage({ ...manage, role: e.target.value })}><option value="CUSTOMER">Customer</option><option value="OPERATIONS">Operations</option></select>}
               </Field>
-              <button className="btn btn-quiet" disabled={!idOk || mBusy} onClick={() => act('role', () => patch(`/admin/users/${id}/role`, { role: manage.role }), 'Role updated.')}>Change role</button>
+              <button className="btn btn-quiet" disabled={!idOk || !!mBusy || protectedUser} onClick={() => { setManageError(null); setConfirm('role') }}>Change role</button>
               <Field label="New password" htmlFor="m-pw" hint="At least 12 characters.">
                 <input id="m-pw" type="password" autoComplete="new-password" value={manage.newPassword} onChange={(e) => setManage({ ...manage, newPassword: e.target.value })} />
               </Field>
-              <button className="btn btn-quiet" disabled={!idOk || !manage.newPassword || mBusy} onClick={() => act('password', () => post(`/admin/users/${id}/reset-password`, { newPassword: manage.newPassword }), 'Password reset.')}>Reset password</button>
+              <button className="btn btn-quiet" disabled={!idOk || !manage.newPassword || !!mBusy || protectedUser} onClick={() => { setManageError(null); setConfirm('password') }}>Reset password</button>
             </div>
           </Card>
-          <Tip title="Why paste an ID?">The bank has no user list endpoint, so this screen can only act on IDs you already have. IDs of users created here are shown on the left.</Tip>
         </div>
       </div>
+      <ConfirmDialog open={!!confirm} title={confirmTitle} confirmLabel="Confirm" busy={!!mBusy} error={manageError} onConfirm={() => act(confirm)} onCancel={() => setConfirm('')}>
+        <p>{confirm === 'status' ? `This will set ${manage.username || id} to ${titleCase(manage.status)}.` : confirm === 'role' ? `This will change ${manage.username || id} to ${titleCase(manage.role)}.` : `This will reset the password for ${manage.username || id}.`}</p>
+      </ConfirmDialog>
     </>
   )
 }

@@ -7,6 +7,8 @@
 /bin/
 /backend/bin/
 /backend/tmp/
+/backend/bank-server
+/backend/bank-server.exe
 *.test
 *.out
 coverage.out
