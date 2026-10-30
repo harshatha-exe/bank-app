@@ -2,7 +2,7 @@ import { Link, useParams } from 'react-router-dom'
 import { get } from '../../api'
 import { Alert, Card, Chip, CopyButton, Loading, PageHeader, Tip, useLoad } from '../../components/ui.jsx'
 import { dateTime, money } from '../../format'
-import { accountLabel } from './Transfers.jsx'
+import { accountLabel, destinationLabel } from './Transfers.jsx'
 
 async function load(ref) {
   const [t, a, b] = await Promise.all([get(`/transfers/${ref}`), get('/accounts'), get('/beneficiaries')])
@@ -25,7 +25,8 @@ export default function TransferDetail() {
             <dl className="summary wide">
               <dt>Amount</dt><dd className="strong big">{money(t.amount)}</dd>
               <dt>From</dt><dd>{accountLabel(t.sourceAccountId, data.accounts, data.beneficiaries)}</dd>
-              <dt>To</dt><dd>{accountLabel(t.destinationAccountId, data.accounts, data.beneficiaries)}</dd>
+              <dt>To</dt><dd>{destinationLabel(t, data.accounts, data.beneficiaries)}</dd>
+              <dt>Review</dt><dd><Chip value={t.reviewStatus} /></dd>
               <dt>Purpose</dt><dd>{t.purpose || '—'}</dd>
               <dt>Date</dt><dd>{dateTime(t.createdAt)}</dd>
               <dt>Reference</dt><dd>{t.referenceNumber} <CopyButton text={t.referenceNumber} /></dd>

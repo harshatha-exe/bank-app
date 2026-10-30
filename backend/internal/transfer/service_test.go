@@ -2,13 +2,30 @@ package transfer
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
 	"bank-app-ioc/backend/internal/apperr"
 	"bank-app-ioc/backend/repository"
 	"github.com/google/uuid"
+	"strings"
 )
+
+func TestDTOMasksDestinationAndIncludesReviewStatus(t *testing.T) {
+	dto := dto(repository.TransferRecord{DestinationAccountNumber: "1234567890123456", ReviewStatus: "NONE"})
+	if dto.DestinationAccountMasked != "******3456" || dto.ReviewStatus != "NONE" {
+		t.Fatalf("unexpected DTO fields: %+v", dto)
+	}
+	data, err := json.Marshal(dto)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(data)
+	if strings.Contains(body, "1234567890123456") || !strings.Contains(body, `"destinationAccountMasked":"******3456"`) || !strings.Contains(body, `"reviewStatus":"NONE"`) {
+		t.Fatalf("unexpected JSON: %s", body)
+	}
+}
 
 type mockRepo struct {
 	create func(context.Context, uuid.UUID, uuid.UUID, repository.TransferInput, string) (repository.TransferRecord, bool, error)

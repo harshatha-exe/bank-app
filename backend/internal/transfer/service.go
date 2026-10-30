@@ -45,7 +45,14 @@ func dto(r repository.TransferRecord) Transfer {
 	}
 	return Transfer{ReferenceNumber: r.ReferenceNumber, SourceAccountID: r.SourceAccountID, DestinationAccountID: r.DestinationAccountID,
 		BeneficiaryID: ben, Amount: r.Amount, Currency: r.Currency, Purpose: r.Purpose, Status: r.Status,
+		DestinationAccountMasked: mask(r.DestinationAccountNumber), ReviewStatus: r.ReviewStatus,
 		CreatedAt: r.CreatedAt.UTC().Format(time.RFC3339)}
+}
+func mask(number string) string {
+	if len(number) <= 4 {
+		return number
+	}
+	return "******" + number[len(number)-4:]
 }
 func (s *Service) Create(ctx context.Context, userID, correlationID uuid.UUID, req CreateRequest, key, ip string) (Transfer, bool, error) {
 	v := validate.New()

@@ -22,15 +22,16 @@ type Transaction struct {
 }
 
 type Transfer struct {
-	ReferenceNumber      string    `json:"referenceNumber"`
-	SourceAccountID      uuid.UUID `json:"sourceAccountId"`
-	DestinationAccountID uuid.UUID `json:"destinationAccountId"`
-	Amount               string    `json:"amount"`
-	Currency             string    `json:"currency"`
-	Purpose              string    `json:"purpose"`
-	Status               string    `json:"status"`
-	ReviewStatus         string    `json:"reviewStatus"`
-	CreatedAt            string    `json:"createdAt"`
+	ReferenceNumber          string    `json:"referenceNumber"`
+	SourceAccountID          uuid.UUID `json:"sourceAccountId"`
+	DestinationAccountID     uuid.UUID `json:"destinationAccountId"`
+	Amount                   string    `json:"amount"`
+	Currency                 string    `json:"currency"`
+	Purpose                  string    `json:"purpose"`
+	Status                   string    `json:"status"`
+	ReviewStatus             string    `json:"reviewStatus"`
+	DestinationAccountMasked string    `json:"destinationAccountMasked"`
+	CreatedAt                string    `json:"createdAt"`
 }
 
 type ReviewRequest struct {

@@ -1,7 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import SendMoney from './SendMoney'
+import TransferDetail from './TransferDetail'
 import { get, post } from '../../api'
 
 vi.mock('../../api', () => ({
@@ -93,5 +94,15 @@ describe('SendMoney destination modes', () => {
     expect(screen.getByLabelText('From account').querySelector('option[value="account-3"]')).toBeDisabled()
     fireEvent.click(screen.getByRole('button', { name: 'My accounts' }))
     expect(screen.getByLabelText('To account').querySelector('option[value="account-3"]')).toBeDisabled()
+  })
+
+  it('renders the masked destination and review status on transfer detail', async () => {
+    get.mockResolvedValueOnce({ data: { referenceNumber: 'REF-1', sourceAccountId: 'account-1', destinationAccountId: 'external-1', destinationAccountMasked: '******3456', reviewStatus: 'NONE', amount: '10.00', status: 'COMPLETED', createdAt: '2026-01-01T00:00:00Z' } })
+      .mockResolvedValueOnce({ data: accounts })
+      .mockResolvedValueOnce({ data: beneficiaries })
+    render(<MemoryRouter initialEntries={['/transfers/REF-1']}><Routes><Route path="/transfers/:ref" element={<TransferDetail />} /></Routes></MemoryRouter>)
+    expect(await screen.findByText('******3456')).toBeInTheDocument()
+    expect(screen.getByText('None')).toBeInTheDocument()
+    expect(screen.queryByText('external-1')).not.toBeInTheDocument()
   })
 })

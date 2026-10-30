@@ -11,13 +11,15 @@ type CreateRequest struct {
 }
 
 type Transfer struct {
-	ReferenceNumber      string     `json:"referenceNumber"`
-	SourceAccountID      uuid.UUID  `json:"sourceAccountId"`
-	DestinationAccountID uuid.UUID  `json:"destinationAccountId"`
-	BeneficiaryID        *uuid.UUID `json:"beneficiaryId,omitempty"`
-	Amount               string     `json:"amount"`
-	Currency             string     `json:"currency"`
-	Purpose              string     `json:"purpose"`
-	Status               string     `json:"status"`
-	CreatedAt            string     `json:"createdAt"`
+	ReferenceNumber          string     `json:"referenceNumber"`
+	SourceAccountID          uuid.UUID  `json:"sourceAccountId"`
+	DestinationAccountID     uuid.UUID  `json:"destinationAccountId"`
+	BeneficiaryID            *uuid.UUID `json:"beneficiaryId,omitempty"`
+	Amount                   string     `json:"amount"`
+	Currency                 string     `json:"currency"`
+	Purpose                  string     `json:"purpose"`
+	Status                   string     `json:"status"`
+	DestinationAccountMasked string     `json:"destinationAccountMasked"`
+	ReviewStatus             string     `json:"reviewStatus"`
+	CreatedAt                string     `json:"createdAt"`
 }

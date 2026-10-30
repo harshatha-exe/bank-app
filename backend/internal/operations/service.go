@@ -46,7 +46,7 @@ func accountDTO(r repository.AccountRecord) Account {
 	return Account{ID: r.ID, AccountNumberMasked: mask(r.AccountNumber), AccountType: r.AccountType, Balance: r.Balance, Currency: r.Currency, Status: r.Status}
 }
 func transferDTO(r repository.TransferRecord) Transfer {
-	return Transfer{ReferenceNumber: r.ReferenceNumber, SourceAccountID: r.SourceAccountID, DestinationAccountID: r.DestinationAccountID, Amount: r.Amount, Currency: r.Currency, Purpose: r.Purpose, Status: r.Status, ReviewStatus: r.ReviewStatus, CreatedAt: r.CreatedAt.UTC().Format(time.RFC3339)}
+	return Transfer{ReferenceNumber: r.ReferenceNumber, SourceAccountID: r.SourceAccountID, DestinationAccountID: r.DestinationAccountID, Amount: r.Amount, Currency: r.Currency, Purpose: r.Purpose, Status: r.Status, ReviewStatus: r.ReviewStatus, DestinationAccountMasked: mask(r.DestinationAccountNumber), CreatedAt: r.CreatedAt.UTC().Format(time.RFC3339)}
 }
 
 func (s *Service) ListAccounts(ctx context.Context, userID uuid.UUID) ([]Account, error) {

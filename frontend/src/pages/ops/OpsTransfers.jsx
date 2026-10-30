@@ -67,7 +67,7 @@ export default function OpsTransfers() {
                   {data.map((t) => (
                     <tr key={t.referenceNumber}>
                       <td><div className="strong nowrap">{t.referenceNumber}</div><div className="subtle">{dateTime(t.createdAt)}</div></td>
-                      <td><div className="id-line">From <IdCell id={t.sourceAccountId} /></div><div className="id-line">To <IdCell id={t.destinationAccountId} /></div></td>
+                      <td><div className="id-line">From <IdCell id={t.sourceAccountId} /></div><div className="id-line">To {t.destinationAccountMasked || <IdCell id={t.destinationAccountId} />}</div></td>
                       <td className="num strong">{money(t.amount)}</td>
                       <td><Chip value={t.status} /></td>
                       <td>

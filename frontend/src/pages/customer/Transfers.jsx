@@ -17,6 +17,10 @@ export function accountLabel(id, accounts, beneficiaries) {
   return `Account ${shortId(id)}`
 }
 
+export function destinationLabel(transfer, accounts, beneficiaries) {
+  return transfer.destinationAccountMasked || accountLabel(transfer.destinationAccountId, accounts, beneficiaries)
+}
+
 export default function Transfers() {
   const [page, setPage] = useState(1)
   const { loading, data, meta, error } = useLoad(() => loadAll(page), [page])
@@ -40,7 +44,7 @@ export default function Transfers() {
                       <td><Link to={`/transfers/${t.referenceNumber}`} className="strong">{t.referenceNumber}</Link></td>
                       <td className="nowrap">{dateTime(t.createdAt)}</td>
                       <td>{accountLabel(t.sourceAccountId, data.accounts, data.beneficiaries)}</td>
-                      <td>{accountLabel(t.destinationAccountId, data.accounts, data.beneficiaries)}</td>
+                      <td>{destinationLabel(t, data.accounts, data.beneficiaries)}</td>
                       <td className="num strong">{money(t.amount)}</td>
                       <td><Chip value={t.status} /></td>
                     </tr>

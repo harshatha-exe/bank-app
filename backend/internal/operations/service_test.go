@@ -2,6 +2,8 @@ package operations
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -9,6 +11,21 @@ import (
 
 	"github.com/google/uuid"
 )
+
+func TestTransferDTOMasksDestinationAndIncludesReviewStatus(t *testing.T) {
+	dto := transferDTO(repository.TransferRecord{DestinationAccountNumber: "1234567890123456", ReviewStatus: "NONE"})
+	if dto.DestinationAccountMasked != "******3456" || dto.ReviewStatus != "NONE" {
+		t.Fatalf("unexpected DTO fields: %+v", dto)
+	}
+	data, err := json.Marshal(dto)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(data)
+	if strings.Contains(body, "1234567890123456") || !strings.Contains(body, `"destinationAccountMasked":"******3456"`) || !strings.Contains(body, `"reviewStatus":"NONE"`) {
+		t.Fatalf("unexpected JSON: %s", body)
+	}
+}
 
 type accountRepoStub struct {
 	account  repository.AccountRecord
