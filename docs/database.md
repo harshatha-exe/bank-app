@@ -1,7 +1,8 @@
 # Database
 
-PostgreSQL 16. Schema versioned with [golang-migrate](https://github.com/golang-migrate/migrate) in
-`backend/migrations/`. Primary keys are UUIDs (`gen_random_uuid()` from `pgcrypto`). Timestamps are `TIMESTAMPTZ`.
+> **In one minute:** PostgreSQL 16 holds users, accounts, transfers, a ledger, statement lines, sessions and the audit log. The database itself refuses bad data (negative balances, duplicate transfers, invalid statuses), even if application code has a bug.
+
+PostgreSQL 16. Schema versioned with [golang-migrate](https://github.com/golang-migrate/migrate) in `backend/migrations/`. Primary keys are UUIDs (`gen_random_uuid()` from `pgcrypto`). Timestamps are `TIMESTAMPTZ`. Money is `NUMERIC(19,2)`.
 
 ## 1. Entity relationship diagram
 
@@ -29,16 +30,19 @@ erDiagram
 
     ROLES {
         uuid id PK
-        string name UK "CUSTOMER, OPERATIONS, ADMIN"
+        string name UK
+        string description
     }
     USERS {
         uuid id PK
         string username UK
-        string password_hash "argon2id"
+        string password_hash
         uuid role_id FK
-        string status "ACTIVE, DEACTIVATED"
+        string status
         boolean force_password_change
         timestamptz last_login_at
+        timestamptz created_at
+        timestamptz updated_at
     }
     CUSTOMERS {
         uuid id PK
@@ -50,18 +54,19 @@ erDiagram
         uuid id PK
         uuid customer_id FK
         string account_number UK
-        string account_type "SAVINGS, CURRENT"
-        numeric balance "CHECK balance >= 0"
-        string currency "INR"
-        string status "ACTIVE, FROZEN"
+        string account_type
+        numeric balance
+        string currency
+        string status
         bigint version
+        timestamptz updated_at
     }
     BENEFICIARIES {
         uuid id PK
         uuid customer_id FK
         uuid destination_account_id FK
         string nickname
-        string status "ACTIVE, DEACTIVATED"
+        string status
     }
     ACCOUNT_ASSIGNMENTS {
         uuid id PK
@@ -77,27 +82,35 @@ erDiagram
         uuid destination_account_id FK
         uuid beneficiary_id FK
         uuid initiated_by FK
-        numeric amount "CHECK amount > 0"
-        string status "PENDING, COMPLETED, FAILED"
-        string review_status "NONE, UNDER_REVIEW, RESOLVED"
+        numeric amount
+        string currency
+        string purpose
+        string status
+        string review_status
         string idempotency_key
+        string failure_code
+        timestamptz created_at
+        timestamptz completed_at
     }
     LEDGER_ENTRIES {
         uuid id PK
         uuid transfer_id FK
         uuid account_id FK
-        string entry_type "DEBIT, CREDIT"
+        string entry_type
         numeric amount
         numeric balance_after
+        timestamptz created_at
     }
     TRANSACTIONS {
         uuid id PK
         uuid account_id FK
         uuid transfer_id FK
-        string transaction_type "DEBIT, CREDIT"
+        string transaction_type
         numeric amount
+        string currency
         string description
         numeric balance_after
+        timestamptz created_at
     }
     AUDIT_EVENTS {
         uuid id PK
@@ -110,76 +123,99 @@ erDiagram
         inet ip_address
         uuid correlation_id
         jsonb metadata
+        timestamptz created_at
     }
     SESSIONS {
         uuid id PK
         uuid user_id FK
-        string session_token_hash UK "sha-256 of cookie value"
+        string session_token_hash UK
+        timestamptz created_at
         timestamptz last_active_at
         timestamptz expires_at
     }
     TRANSACTION_LIMITS {
-        boolean id PK "CHECK id, single row"
+        boolean id PK
         numeric max_transfer_amount
         string currency
         uuid updated_by FK
+        timestamptz updated_at
     }
 ```
+
+Allowed values (enforced by `CHECK`): role `CUSTOMER`, `OPERATIONS`, `ADMIN`; user and beneficiary status `ACTIVE`, `DEACTIVATED`; account type `SAVINGS`, `CURRENT`; account status `ACTIVE`, `FROZEN`; transfer status `PENDING`, `COMPLETED`, `FAILED`; review status `NONE`, `UNDER_REVIEW`, `RESOLVED`; entry type `DEBIT`, `CREDIT`; currency `INR`.
 
 ## 2. Tables
 
 | Table | Purpose |
 |---|---|
 | `roles` | The three roles, seeded |
-| `users` | Login identity, Argon2id hash, role, status |
+| `users` | Login identity, Argon2id hash, role, status, `force_password_change` flag |
 | `customers` | Customer profile (1:1 with a customer user) |
-| `bank_accounts` | Balance, status, type; `version` incremented on each balance or status change |
-| `beneficiaries` | A customer's authorisation to use a destination account (does not own it) |
+| `bank_accounts` | Balance, status, type. `version` is incremented on each balance change |
+| `beneficiaries` | A customer's saved destination account (the customer does not own it) |
 | `account_assignments` | Which operations user may access which account |
-| `fund_transfers` | One row per transfer, with status, review status and idempotency key |
-| `ledger_entries` | Immutable double-entry style rows (one DEBIT, one CREDIT per transfer) |
-| `transactions` | Customer-facing statement rows |
-| `audit_events` | Who did what, with entity, result, IP, correlation id, metadata |
-| `sessions` | Server-side sessions keyed by hash of the cookie value |
+| `fund_transfers` | One row per completed transfer, with review status and idempotency key |
+| `ledger_entries` | Double-entry style rows: one DEBIT and one CREDIT per transfer. Append-only by convention (the code never updates or deletes them) |
+| `transactions` | Customer-facing statement lines |
+| `audit_events` | Who did what, with entity, result, IP, correlation id and metadata |
+| `sessions` | Server-side sessions keyed by the hash of the cookie value |
 | `transaction_limits` | Single-row configurable transfer limit |
 
-## 3. Constraints that protect money
+## 3. What one transfer writes
 
-The database enforces the invariants even if application code has a bug:
+```mermaid
+flowchart LR
+    T["One successful transfer, one DB transaction"] --> BA["bank_accounts: 2 balances updated"]
+    T --> FT["fund_transfers: 1 row"]
+    T --> LE["ledger_entries: 1 DEBIT and 1 CREDIT"]
+    T --> TX["transactions: 1 DEBIT and 1 CREDIT"]
+    T --> AE["audit_events: TRANSFER_COMPLETED"]
+```
+
+All five commit together or none do. See [transfer_lifecycle.md](transfer_lifecycle.md).
+
+## 4. Constraints that protect money
 
 | Constraint | Prevents |
 |---|---|
 | `bank_accounts.balance CHECK (balance >= 0)` | Negative balances |
-| `fund_transfers.amount CHECK (amount > 0)`, same on ledger and transactions | Zero or negative transfers |
+| `amount CHECK (amount > 0)` on transfers, ledger and transactions | Zero or negative transfers |
 | `CHECK (source_account_id <> destination_account_id)` | Transfers to the same account |
 | `UNIQUE (initiated_by, idempotency_key)` | Duplicate transfers from retries |
 | `UNIQUE (customer_id, destination_account_id)` on beneficiaries | Duplicate beneficiaries |
 | `UNIQUE (user_id, account_id)` on assignments | Duplicate assignments |
 | `CHECK` lists on every status and role column | Invalid enum values |
-| `CHECK (currency = 'INR')` | Unsupported currency |
+| `CHECK (currency = 'INR')` on accounts and limits | Unsupported currency |
 | `transaction_limits.id BOOLEAN PRIMARY KEY CHECK (id)` | More than one limit row |
 | `sessions.user_id ... ON DELETE CASCADE` | Orphan sessions |
 
-## 4. Indexes
+## 5. Indexes
 
-On foreign keys and hot paths: `users(username)`, `users(role_id)`, `sessions(session_token_hash)`,
-`sessions(user_id)`, `sessions(expires_at)`, `bank_accounts(customer_id)`, `bank_accounts(status)`,
-`transactions(account_id, created_at)`, `ledger_entries(account_id, created_at)`,
-`fund_transfers(source_account_id)`, `fund_transfers(destination_account_id)`, `fund_transfers(initiated_by)`,
-`fund_transfers(created_at)`, `audit_events(actor_user_id)`, `audit_events(event_type, created_at)`,
-`audit_events(correlation_id)`.
+| Table | Indexes |
+|---|---|
+| `roles` | `name` |
+| `users` | `username`, `role_id` |
+| `customers` | `user_id` |
+| `bank_accounts` | `customer_id`, `status` |
+| `beneficiaries` | `customer_id` |
+| `account_assignments` | `user_id`, `account_id` |
+| `fund_transfers` | `source_account_id`, `destination_account_id`, `initiated_by`, `created_at` |
+| `ledger_entries` | `transfer_id`, `(account_id, created_at)` |
+| `transactions` | `(account_id, created_at)`, `transfer_id` |
+| `audit_events` | `actor_user_id`, `(event_type, created_at)`, `correlation_id` |
+| `sessions` | `session_token_hash`, `user_id`, `expires_at` |
 
-## 5. Migrations
+## 6. Migrations
 
 | File | Contents |
 |---|---|
-| `001_init.up/down.sql` | Extension, all tables, indexes, role seed, demo users, customers, accounts and sample transfers |
-| `002_create_transaction_limits.up/down.sql` | Single-row limit table, seeded at 100000.00 |
+| `001_init.up.sql` / `.down.sql` | Extension, all tables, indexes, role seed, demo users, customers, accounts and sample transfers |
+| `002_create_transaction_limits.up.sql` / `.down.sql` | Single-row limit table, seeded at `100000.00` |
 
 Rules:
 1. Never edit an applied migration. Add a new numbered pair.
 2. Every `up` has a working `down`. CI runs `up`, `down -all`, `up` to prove it.
-3. Use a unique, increasing numeric prefix (`003_...`). Two files with the same version number make `migrate` fail.
+3. Use a unique, increasing numeric prefix (`003_...`). Two files with the same number make `migrate` fail.
 4. Test destructive changes against a copy of the data first.
 
 ```sh
@@ -187,15 +223,20 @@ make migrate-up       # apply all
 make migrate-down     # roll back one step
 ```
 
-## 6. Seed data (development only)
+## 7. Seed data (development only)
 
-Four users (admin, operations, two customers), two customers with four accounts, and two completed sample transfers
-with matching ledger and transaction rows. Account numbers in the seed are already masked-looking strings
-(`******1234`); the API still masks on output, so real full numbers would be hidden too.
+Four users (admin, operations, two customers), two customers with four accounts, and two completed sample transfers (`FT-DEMO-0001`, `FT-DEMO-0002`) with matching ledger and statement rows. The seeded `account_number` values are already masked-looking strings (`******1234`), and the API masks on output anyway.
 
-## 7. Querying notes
+Remove all of this before any real deployment ([deployment.md](deployment.md)).
 
-- Reads never use `SELECT *`; columns are listed explicitly.
+## 8. Known schema notes
+
+- `fund_transfers.status` allows `PENDING` and `FAILED`, and `failure_code` exists, but the current code only writes `COMPLETED` rows. Failed attempts are recorded as `TRANSFER_FAILED` audit events instead.
+- `users.force_password_change` is set when an admin creates a user.
+- `bank_accounts.version` is bumped on balance changes, but the code relies on row locks, not on version checks.
+
+## 9. Querying notes
+
+- Reads list columns explicitly instead of `SELECT *`.
 - `balance` and `amount` are cast with `::text` on read so the API returns exact decimal strings.
-- Dynamic filters (audit, statements, operations transfers) append constant SQL fragments with `$n` placeholders;
-  sort columns come from a lookup map, not from user input.
+- Dynamic filters (audit, statements, operations transfers) append constant SQL fragments with `$n` placeholders. Sort columns come from a lookup map, never from user input.
