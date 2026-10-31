@@ -1,14 +1,205 @@
 basePath: /api
 definitions:
+  bank-app-ioc_backend_internal_account.Account:
+    properties:
+      accountNumberMasked:
+        example: '******4821'
+        type: string
+      accountType:
+        example: SAVINGS
+        type: string
+      balance:
+        example: "12500.00"
+        type: string
+      currency:
+        example: INR
+        type: string
+      id:
+        example: 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048
+        type: string
+      status:
+        example: ACTIVE
+        type: string
+    type: object
+  bank-app-ioc_backend_internal_account.Transaction:
+    properties:
+      amount:
+        example: "3000.00"
+        type: string
+      balanceAfter:
+        example: "12500.00"
+        type: string
+      createdAt:
+        example: "2026-10-31T10:15:00Z"
+        type: string
+      currency:
+        example: INR
+        type: string
+      description:
+        example: Salary credit
+        type: string
+      id:
+        example: 2a8b4c6d-1e3f-4a90-b7c2-5d6e8f901234
+        type: string
+      type:
+        example: CREDIT
+        type: string
+    type: object
+  bank-app-ioc_backend_internal_admin.AssignmentDTO:
+    properties:
+      accountId:
+        example: 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048
+        type: string
+      assignedAt:
+        example: "2026-10-31T10:15:00Z"
+        type: string
+      id:
+        example: 6d9f2b41-8c73-4e05-a1b6-7d2f904c5381
+        type: string
+      operationsUserId:
+        example: 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317
+        type: string
+    type: object
+  bank-app-ioc_backend_internal_admin.AuditEvent:
+    properties:
+      action:
+        example: CREATE
+        type: string
+      actorUserId:
+        example: 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317
+        type: string
+      correlationId:
+        example: 8a1d3f72-5c94-4e06-b7a2-9f1c63840527
+        type: string
+      createdAt:
+        example: "2026-10-31T10:15:00Z"
+        type: string
+      entityId:
+        example: 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317
+        type: string
+      entityType:
+        example: USER
+        type: string
+      eventType:
+        example: USER_CREATED
+        type: string
+      id:
+        example: 6d9f2b41-8c73-4e05-a1b6-7d2f904c5381
+        type: string
+      ipAddress:
+        example: 192.0.2.10
+        type: string
+      metadata:
+        items:
+          type: integer
+        type: array
+      result:
+        example: SUCCESS
+        type: string
+    type: object
+  bank-app-ioc_backend_internal_admin.LimitDTO:
+    properties:
+      currency:
+        example: INR
+        type: string
+      maxTransferAmount:
+        example: "100000.00"
+        type: string
+    type: object
+  bank-app-ioc_backend_internal_admin.UserDTO:
+    properties:
+      createdAt:
+        example: "2026-10-31T10:15:00Z"
+        type: string
+      id:
+        example: 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317
+        type: string
+      role:
+        example: OPERATIONS
+        type: string
+      status:
+        example: ACTIVE
+        type: string
+      username:
+        example: nisha.ops
+        type: string
+    type: object
+  bank-app-ioc_backend_internal_admin.UserRoleResponse:
+    properties:
+      id:
+        example: 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317
+        type: string
+      role:
+        example: OPERATIONS
+        type: string
+    type: object
+  bank-app-ioc_backend_internal_admin.UserStatusResponse:
+    properties:
+      id:
+        example: 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317
+        type: string
+      status:
+        example: DEACTIVATED
+        type: string
+    type: object
+  bank-app-ioc_backend_internal_auth.AuthUserResponse:
+    properties:
+      user:
+        $ref: '#/definitions/bank-app-ioc_backend_internal_auth.PublicUser'
+    type: object
+  bank-app-ioc_backend_internal_auth.CurrentUserResponse:
+    properties:
+      id:
+        example: 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048
+        type: string
+      role:
+        example: CUSTOMER
+        type: string
+      username:
+        example: aarav.demo
+        type: string
+    type: object
+  bank-app-ioc_backend_internal_auth.PublicUser:
+    properties:
+      id:
+        example: 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048
+        type: string
+      role:
+        example: CUSTOMER
+        type: string
+      username:
+        example: aarav.demo
+        type: string
+    type: object
+  bank-app-ioc_backend_internal_beneficiary.Beneficiary:
+    properties:
+      destinationAccountId:
+        example: 5b2d7f41-9c63-4e80-a5b1-2d7c8f904613
+        type: string
+      destinationAccountMasked:
+        example: '******4821'
+        type: string
+      id:
+        example: 3c7d9e10-2a4b-4f86-b1d3-6e8a0c925174
+        type: string
+      nickname:
+        example: Monthly rent
+        type: string
+      status:
+        example: ACTIVE
+        type: string
+    type: object
   bank-app-ioc_backend_internal_httpx.ErrorBody:
     properties:
       code:
+        example: VALIDATION_ERROR
         type: string
       fields:
         additionalProperties:
           type: string
         type: object
       message:
+        example: Request validation failed.
         type: string
     type: object
   bank-app-ioc_backend_internal_httpx.ErrorResponse:
@@ -26,89 +217,227 @@ definitions:
         additionalProperties: true
         type: object
     type: object
+  bank-app-ioc_backend_internal_operations.Account:
+    properties:
+      accountNumberMasked:
+        example: '******4821'
+        type: string
+      accountType:
+        example: SAVINGS
+        type: string
+      balance:
+        example: "12500.00"
+        type: string
+      currency:
+        example: INR
+        type: string
+      id:
+        example: 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048
+        type: string
+      status:
+        example: ACTIVE
+        type: string
+    type: object
+  bank-app-ioc_backend_internal_operations.Transaction:
+    properties:
+      amount:
+        example: "3000.00"
+        type: string
+      balanceAfter:
+        example: "9500.00"
+        type: string
+      createdAt:
+        example: "2026-10-31T10:15:00Z"
+        type: string
+      currency:
+        example: INR
+        type: string
+      description:
+        example: Monthly rent
+        type: string
+      id:
+        example: 2a8b4c6d-1e3f-4a90-b7c2-5d6e8f901234
+        type: string
+      type:
+        example: DEBIT
+        type: string
+    type: object
+  bank-app-ioc_backend_internal_operations.Transfer:
+    properties:
+      amount:
+        example: "3000.00"
+        type: string
+      createdAt:
+        example: "2026-10-31T10:15:00Z"
+        type: string
+      currency:
+        example: INR
+        type: string
+      destinationAccountId:
+        example: 5b2d7f41-9c63-4e80-a5b1-2d7c8f904613
+        type: string
+      destinationAccountMasked:
+        example: '******4821'
+        type: string
+      purpose:
+        example: Monthly rent
+        type: string
+      referenceNumber:
+        example: TRF-9F3A7C2E51B8D604
+        type: string
+      reviewStatus:
+        example: UNDER_REVIEW
+        type: string
+      sourceAccountId:
+        example: 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048
+        type: string
+      status:
+        example: COMPLETED
+        type: string
+    type: object
+  bank-app-ioc_backend_internal_transfer.Transfer:
+    properties:
+      amount:
+        example: "3000.00"
+        type: string
+      beneficiaryId:
+        example: 3c7d9e10-2a4b-4f86-b1d3-6e8a0c925174
+        type: string
+      createdAt:
+        example: "2026-10-31T10:15:00Z"
+        type: string
+      currency:
+        example: INR
+        type: string
+      destinationAccountId:
+        example: 5b2d7f41-9c63-4e80-a5b1-2d7c8f904613
+        type: string
+      destinationAccountMasked:
+        example: '******4821'
+        type: string
+      purpose:
+        example: Monthly rent
+        type: string
+      referenceNumber:
+        example: TRF-9F3A7C2E51B8D604
+        type: string
+      reviewStatus:
+        example: NONE
+        type: string
+      sourceAccountId:
+        example: 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048
+        type: string
+      status:
+        example: COMPLETED
+        type: string
+    type: object
   internal_admin.AssignRequest:
     properties:
       accountId:
+        example: 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048
         type: string
       operationsUserId:
+        example: 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317
         type: string
     type: object
   internal_admin.CreateUserRequest:
     properties:
       fullName:
         description: required only when role is CUSTOMER
+        example: Nisha Demo
         type: string
       role:
+        example: OPERATIONS
         type: string
       temporaryPassword:
+        example: ExamplePass123!
         type: string
       username:
+        example: nisha.ops
         type: string
     type: object
   internal_admin.LimitRequest:
     properties:
       maxTransferAmount:
+        example: "100000.00"
         type: string
     type: object
   internal_admin.ResetPasswordRequest:
     properties:
       newPassword:
+        example: ExamplePass123!
         type: string
     type: object
   internal_admin.RoleRequest:
     properties:
       role:
+        example: OPERATIONS
         type: string
     type: object
   internal_admin.StatusRequest:
     properties:
       status:
+        example: DEACTIVATED
         type: string
     type: object
   internal_auth.LoginRequest:
     properties:
       password:
+        example: ExamplePass123!
         type: string
       username:
+        example: aarav.demo
         type: string
     type: object
   internal_auth.SignupRequest:
     properties:
       fullName:
+        example: Aarav Demo
         type: string
       password:
+        example: ExamplePass123!
         type: string
       username:
+        example: aarav.demo
         type: string
     type: object
   internal_beneficiary.CreateRequest:
     properties:
       destinationAccountId:
+        example: 5b2d7f41-9c63-4e80-a5b1-2d7c8f904613
         type: string
       nickname:
+        example: Monthly rent
         type: string
     type: object
   internal_beneficiary.StatusRequest:
     properties:
       status:
+        example: DEACTIVATED
         type: string
     type: object
   internal_operations.ReviewRequest:
     properties:
       reviewStatus:
+        example: UNDER_REVIEW
         type: string
     type: object
   internal_transfer.CreateRequest:
     properties:
       amount:
+        example: "3000.00"
         type: string
       beneficiaryId:
+        example: 3c7d9e10-2a4b-4f86-b1d3-6e8a0c925174
         type: string
       destinationAccountId:
+        example: 5b2d7f41-9c63-4e80-a5b1-2d7c8f904613
         type: string
       purpose:
+        example: Monthly rent
         type: string
       sourceAccountId:
+        example: 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048
         type: string
     type: object
 info:
@@ -128,7 +457,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/bank-app-ioc_backend_internal_account.Account'
+                  type: array
+              type: object
         "401":
           description: Unauthorized
           schema:
@@ -143,7 +479,7 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Account UUID
+      - description: Account UUID, e.g. 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048
         in: path
         name: accountId
         required: true
@@ -154,7 +490,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bank-app-ioc_backend_internal_account.Account'
+              type: object
         "401":
           description: Unauthorized
           schema:
@@ -173,27 +514,27 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Account UUID
+      - description: Account UUID, e.g. 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048
         in: path
         name: accountId
         required: true
         type: string
-      - description: Transaction type
+      - description: Transaction type, e.g. CREDIT
         enum:
         - DEBIT
         - CREDIT
         in: query
         name: type
         type: string
-      - description: Page number
+      - description: Page number, e.g. 1
         in: query
         name: page
         type: integer
-      - description: Page size
+      - description: Page size, e.g. 20
         in: query
         name: pageSize
         type: integer
-      - description: Sort field
+      - description: Sort field, e.g. createdAt
         enum:
         - createdAt
         - amount
@@ -201,26 +542,26 @@ paths:
         in: query
         name: sort
         type: string
-      - description: Sort direction
+      - description: Sort direction, e.g. DESC
         enum:
         - ASC
         - DESC
         in: query
         name: direction
         type: string
-      - description: RFC3339 start time
+      - description: RFC3339 start time, e.g. 2026-10-01T00:00:00Z
         in: query
         name: from
         type: string
-      - description: RFC3339 end time
+      - description: RFC3339 end time, e.g. 2026-10-31T23:59:59Z
         in: query
         name: to
         type: string
-      - description: Minimum amount
+      - description: Minimum amount, e.g. 100.00
         in: query
         name: minAmount
         type: string
-      - description: Maximum amount
+      - description: Maximum amount, e.g. 5000.00
         in: query
         name: maxAmount
         type: string
@@ -230,7 +571,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/bank-app-ioc_backend_internal_account.Transaction'
+                  type: array
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -265,7 +613,12 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bank-app-ioc_backend_internal_admin.AssignmentDTO'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -293,39 +646,39 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Event type
+      - description: Event type, e.g. USER_CREATED
         in: query
         name: eventType
         type: string
-      - description: Actor user UUID
+      - description: Actor user UUID, e.g. 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317
         in: query
         name: actorUserId
         type: string
-      - description: Entity type
+      - description: Entity type, e.g. USER
         in: query
         name: entityType
         type: string
-      - description: Entity UUID
+      - description: Entity UUID, e.g. 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317
         in: query
         name: entityId
         type: string
-      - description: Result
+      - description: Result, e.g. SUCCESS
         in: query
         name: result
         type: string
-      - description: RFC3339 start time
+      - description: RFC3339 start time, e.g. 2026-10-01T00:00:00Z
         in: query
         name: from
         type: string
-      - description: RFC3339 end time
+      - description: RFC3339 end time, e.g. 2026-10-31T23:59:59Z
         in: query
         name: to
         type: string
-      - description: Page number
+      - description: Page number, e.g. 1
         in: query
         name: page
         type: integer
-      - description: Page size
+      - description: Page size, e.g. 25
         in: query
         name: pageSize
         type: integer
@@ -335,7 +688,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/bank-app-ioc_backend_internal_admin.AuditEvent'
+                  type: array
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -363,7 +723,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bank-app-ioc_backend_internal_admin.LimitDTO'
+              type: object
         "401":
           description: Unauthorized
           schema:
@@ -393,7 +758,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bank-app-ioc_backend_internal_admin.LimitDTO'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -417,23 +787,23 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Username substring
+      - description: Username substring, e.g. nisha
         in: query
         name: search
         type: string
-      - description: User role
+      - description: User role, e.g. OPERATIONS
         in: query
         name: role
         type: string
-      - description: User status
+      - description: User status, e.g. ACTIVE
         in: query
         name: status
         type: string
-      - description: Page number
+      - description: Page number, e.g. 1
         in: query
         name: page
         type: integer
-      - description: Page size
+      - description: Page size, e.g. 25
         in: query
         name: pageSize
         type: integer
@@ -443,7 +813,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/bank-app-ioc_backend_internal_admin.UserDTO'
+                  type: array
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -477,7 +854,12 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bank-app-ioc_backend_internal_admin.UserDTO'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -505,7 +887,7 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: User UUID
+      - description: User UUID, e.g. 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317
         in: path
         name: userId
         required: true
@@ -548,7 +930,7 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: User UUID
+      - description: User UUID, e.g. 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317
         in: path
         name: userId
         required: true
@@ -565,7 +947,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bank-app-ioc_backend_internal_admin.UserRoleResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -593,7 +980,7 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: User UUID
+      - description: User UUID, e.g. 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317
         in: path
         name: userId
         required: true
@@ -610,7 +997,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bank-app-ioc_backend_internal_admin.UserStatusResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -650,7 +1042,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bank-app-ioc_backend_internal_auth.AuthUserResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -709,7 +1106,12 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bank-app-ioc_backend_internal_auth.AuthUserResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -731,7 +1133,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/bank-app-ioc_backend_internal_beneficiary.Beneficiary'
+                  type: array
+              type: object
         "401":
           description: Unauthorized
           schema:
@@ -757,7 +1166,12 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bank-app-ioc_backend_internal_beneficiary.Beneficiary'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -789,7 +1203,7 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Beneficiary UUID
+      - description: Beneficiary UUID, e.g. 3c7d9e10-2a4b-4f86-b1d3-6e8a0c925174
         in: path
         name: beneficiaryId
         required: true
@@ -806,7 +1220,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bank-app-ioc_backend_internal_beneficiary.Beneficiary'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -839,7 +1258,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bank-app-ioc_backend_internal_auth.CurrentUserResponse'
+              type: object
         "401":
           description: Unauthorized
           schema:
@@ -857,7 +1281,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/bank-app-ioc_backend_internal_operations.Account'
+                  type: array
+              type: object
         "401":
           description: Unauthorized
           schema:
@@ -874,7 +1305,7 @@ paths:
   /operations/accounts/{accountId}/freeze:
     post:
       parameters:
-      - description: Account UUID
+      - description: Account UUID, e.g. 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048
         in: path
         name: accountId
         required: true
@@ -885,7 +1316,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bank-app-ioc_backend_internal_operations.Account'
+              type: object
         "401":
           description: Unauthorized
           schema:
@@ -907,27 +1343,27 @@ paths:
   /operations/accounts/{accountId}/transactions:
     get:
       parameters:
-      - description: Account UUID
+      - description: Account UUID, e.g. 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048
         in: path
         name: accountId
         required: true
         type: string
-      - description: Transaction type
+      - description: Transaction type, e.g. DEBIT
         enum:
         - DEBIT
         - CREDIT
         in: query
         name: type
         type: string
-      - description: Page number
+      - description: Page number, e.g. 1
         in: query
         name: page
         type: integer
-      - description: Page size
+      - description: Page size, e.g. 20
         in: query
         name: pageSize
         type: integer
-      - description: Sort field
+      - description: Sort field, e.g. createdAt
         enum:
         - createdAt
         - amount
@@ -935,26 +1371,26 @@ paths:
         in: query
         name: sort
         type: string
-      - description: Sort direction
+      - description: Sort direction, e.g. DESC
         enum:
         - ASC
         - DESC
         in: query
         name: direction
         type: string
-      - description: RFC3339 start time
+      - description: RFC3339 start time, e.g. 2026-10-01T00:00:00Z
         in: query
         name: from
         type: string
-      - description: RFC3339 end time
+      - description: RFC3339 end time, e.g. 2026-10-31T23:59:59Z
         in: query
         name: to
         type: string
-      - description: Minimum amount
+      - description: Minimum amount, e.g. 100.00
         in: query
         name: minAmount
         type: string
-      - description: Maximum amount
+      - description: Maximum amount, e.g. 5000.00
         in: query
         name: maxAmount
         type: string
@@ -964,7 +1400,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/bank-app-ioc_backend_internal_operations.Transaction'
+                  type: array
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -989,7 +1432,7 @@ paths:
   /operations/accounts/{accountId}/unfreeze:
     post:
       parameters:
-      - description: Account UUID
+      - description: Account UUID, e.g. 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048
         in: path
         name: accountId
         required: true
@@ -1000,7 +1443,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bank-app-ioc_backend_internal_operations.Account'
+              type: object
         "401":
           description: Unauthorized
           schema:
@@ -1022,11 +1470,11 @@ paths:
   /operations/transfers:
     get:
       parameters:
-      - description: Exact reference number
+      - description: Exact reference number, e.g. TRF-9F3A7C2E51B8D604
         in: query
         name: reference
         type: string
-      - description: Transfer status
+      - description: Transfer status, e.g. COMPLETED
         enum:
         - PENDING
         - COMPLETED
@@ -1034,7 +1482,7 @@ paths:
         in: query
         name: status
         type: string
-      - description: Review status
+      - description: Review status, e.g. UNDER_REVIEW
         enum:
         - NONE
         - UNDER_REVIEW
@@ -1042,19 +1490,19 @@ paths:
         in: query
         name: reviewStatus
         type: string
-      - description: RFC3339 start time
+      - description: RFC3339 start time, e.g. 2026-10-01T00:00:00Z
         in: query
         name: dateFrom
         type: string
-      - description: RFC3339 end time
+      - description: RFC3339 end time, e.g. 2026-10-31T23:59:59Z
         in: query
         name: dateTo
         type: string
-      - description: Page number
+      - description: Page number, e.g. 1
         in: query
         name: page
         type: integer
-      - description: Page size
+      - description: Page size, e.g. 20
         in: query
         name: pageSize
         type: integer
@@ -1064,7 +1512,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/bank-app-ioc_backend_internal_operations.Transfer'
+                  type: array
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -1087,7 +1542,7 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Transfer reference number
+      - description: Transfer reference number, e.g. TRF-9F3A7C2E51B8D604
         in: path
         name: reference
         required: true
@@ -1104,7 +1559,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bank-app-ioc_backend_internal_operations.Transfer'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -1132,11 +1592,11 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Page number
+      - description: Page number, e.g. 1
         in: query
         name: page
         type: integer
-      - description: Page size
+      - description: Page size, e.g. 20
         in: query
         name: pageSize
         type: integer
@@ -1146,7 +1606,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/bank-app-ioc_backend_internal_transfer.Transfer'
+                  type: array
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -1170,7 +1637,7 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/internal_transfer.CreateRequest'
-      - description: Unique idempotency key
+      - description: Unique idempotency key, e.g. f47ac10b-58cc-4372-a567-0e02b2c3d479
         in: header
         name: Idempotency-Key
         required: true
@@ -1181,7 +1648,12 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bank-app-ioc_backend_internal_transfer.Transfer'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -1225,7 +1697,7 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Transfer reference number
+      - description: Transfer reference number, e.g. TRF-9F3A7C2E51B8D604
         in: path
         name: referenceNumber
         required: true
@@ -1236,7 +1708,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            allOf:
+            - $ref: '#/definitions/bank-app-ioc_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bank-app-ioc_backend_internal_transfer.Transfer'
+              type: object
         "401":
           description: Unauthorized
           schema:

@@ -74,8 +74,6 @@ flowchart LR
 | `README.md` | Says Gin 1.10; `go.mod` has Gin 1.12.0 and Go 1.26 |
 | `README.md` | Documentation map links use upper-case names but the files are lower-case; keep the filenames exactly as listed |
 | `api.md` | Says reset-password is "never logged or audited", but `USER_PASSWORD_RESET` is an audit event. Reword to "the password value is never logged or audited" |
-| `frontend/README.md` | Says the transfer handler does not read the request body (commit `41ad906`); the current handler calls `httpx.BindJSON`, so remove that section |
-| `.devcontainer` | Mentions Angular and port 4200 |
 | `.env.example` | `RATE_LIMIT` is unused; session timeouts differ from code defaults (`15m`/`8h` vs `30m`/`24h`) |
 | `design.md` | Section 3.9 and the transfer flow are right, but add one line: `TRANSFER_FAILED` is a best-effort audit written by the handler **after** rollback, not inside the transaction |
 
@@ -115,5 +113,6 @@ flowchart TD
 
 | Name | Contribution |
 |---|---|
-| Guruprakash P | _fill in_ |
-| Harshatha Rithika | _fill in_ |
+| [Guruprakash P](https://www.github.com/05-guruprakash) | Admin side, error handling, validation, observability  |
+| [Harshatha Rithika](https://www.github.com/harshatha-exe) | Customer features, operations, backend integration and testing |
+| [Dushyanth Raj V](https://www.github.com/vdushyanthraj) | Frontend (React) |

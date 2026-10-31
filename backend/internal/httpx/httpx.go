@@ -25,8 +25,8 @@ type ErrorResponse struct {
 }
 
 type ErrorBody struct {
-	Code    string            `json:"code"`
-	Message string            `json:"message"`
+	Code    string            `json:"code" example:"VALIDATION_ERROR"`
+	Message string            `json:"message" example:"Request validation failed."`
 	Fields  map[string]string `json:"fields,omitempty"`
 }
 

@@ -19,14 +19,14 @@
       ]
     }
   },
-  "forwardPorts": [8080, 4200, 5432],
+  "forwardPorts": [8080, 5173, 5432],
   "portsAttributes": {
     "8080": {
       "label": "Backend API",
       "visibility": "private"
     },
     "4200": {
-      "label": "Angular frontend"
+      "label": "React frontend"
     },
     "5432": {
       "label": "Postgres"

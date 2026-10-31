@@ -36,7 +36,22 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/bank-app-ioc_backend_internal_account.Account"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -68,7 +83,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Account UUID",
+                        "description": "Account UUID, e.g. 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048",
                         "name": "accountId",
                         "in": "path",
                         "required": true
@@ -78,7 +93,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/bank-app-ioc_backend_internal_account.Account"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -116,7 +143,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Account UUID",
+                        "description": "Account UUID, e.g. 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048",
                         "name": "accountId",
                         "in": "path",
                         "required": true
@@ -127,19 +154,19 @@ const docTemplate = `{
                             "CREDIT"
                         ],
                         "type": "string",
-                        "description": "Transaction type",
+                        "description": "Transaction type, e.g. CREDIT",
                         "name": "type",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Page number",
+                        "description": "Page number, e.g. 1",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Page size",
+                        "description": "Page size, e.g. 20",
                         "name": "pageSize",
                         "in": "query"
                     },
@@ -150,7 +177,7 @@ const docTemplate = `{
                             "type"
                         ],
                         "type": "string",
-                        "description": "Sort field",
+                        "description": "Sort field, e.g. createdAt",
                         "name": "sort",
                         "in": "query"
                     },
@@ -160,31 +187,31 @@ const docTemplate = `{
                             "DESC"
                         ],
                         "type": "string",
-                        "description": "Sort direction",
+                        "description": "Sort direction, e.g. DESC",
                         "name": "direction",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "RFC3339 start time",
+                        "description": "RFC3339 start time, e.g. 2026-10-01T00:00:00Z",
                         "name": "from",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "RFC3339 end time",
+                        "description": "RFC3339 end time, e.g. 2026-10-31T23:59:59Z",
                         "name": "to",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Minimum amount",
+                        "description": "Minimum amount, e.g. 100.00",
                         "name": "minAmount",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Maximum amount",
+                        "description": "Maximum amount, e.g. 5000.00",
                         "name": "maxAmount",
                         "in": "query"
                     }
@@ -193,7 +220,22 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/bank-app-ioc_backend_internal_account.Transaction"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -252,7 +294,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/bank-app-ioc_backend_internal_admin.AssignmentDTO"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -302,55 +356,55 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Event type",
+                        "description": "Event type, e.g. USER_CREATED",
                         "name": "eventType",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Actor user UUID",
+                        "description": "Actor user UUID, e.g. 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317",
                         "name": "actorUserId",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Entity type",
+                        "description": "Entity type, e.g. USER",
                         "name": "entityType",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Entity UUID",
+                        "description": "Entity UUID, e.g. 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317",
                         "name": "entityId",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Result",
+                        "description": "Result, e.g. SUCCESS",
                         "name": "result",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "RFC3339 start time",
+                        "description": "RFC3339 start time, e.g. 2026-10-01T00:00:00Z",
                         "name": "from",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "RFC3339 end time",
+                        "description": "RFC3339 end time, e.g. 2026-10-31T23:59:59Z",
                         "name": "to",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Page number",
+                        "description": "Page number, e.g. 1",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Page size",
+                        "description": "Page size, e.g. 25",
                         "name": "pageSize",
                         "in": "query"
                     }
@@ -359,7 +413,22 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/bank-app-ioc_backend_internal_admin.AuditEvent"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -404,7 +473,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/bank-app-ioc_backend_internal_admin.LimitDTO"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -455,7 +536,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/bank-app-ioc_backend_internal_admin.LimitDTO"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -499,31 +592,31 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Username substring",
+                        "description": "Username substring, e.g. nisha",
                         "name": "search",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "User role",
+                        "description": "User role, e.g. OPERATIONS",
                         "name": "role",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "User status",
+                        "description": "User status, e.g. ACTIVE",
                         "name": "status",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Page number",
+                        "description": "Page number, e.g. 1",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Page size",
+                        "description": "Page size, e.g. 25",
                         "name": "pageSize",
                         "in": "query"
                     }
@@ -532,7 +625,22 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/bank-app-ioc_backend_internal_admin.UserDTO"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -589,7 +697,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/bank-app-ioc_backend_internal_admin.UserDTO"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -642,7 +762,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User UUID",
+                        "description": "User UUID, e.g. 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317",
                         "name": "userId",
                         "in": "path",
                         "required": true
@@ -711,7 +831,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User UUID",
+                        "description": "User UUID, e.g. 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317",
                         "name": "userId",
                         "in": "path",
                         "required": true
@@ -730,7 +850,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/bank-app-ioc_backend_internal_admin.UserRoleResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -783,7 +915,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User UUID",
+                        "description": "User UUID, e.g. 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317",
                         "name": "userId",
                         "in": "path",
                         "required": true
@@ -802,7 +934,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/bank-app-ioc_backend_internal_admin.UserStatusResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -859,7 +1003,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/bank-app-ioc_backend_internal_auth.AuthUserResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -954,7 +1110,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/bank-app-ioc_backend_internal_auth.AuthUserResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -993,7 +1161,22 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/bank-app-ioc_backend_internal_beneficiary.Beneficiary"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -1038,7 +1221,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/bank-app-ioc_backend_internal_beneficiary.Beneficiary"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -1097,7 +1292,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Beneficiary UUID",
+                        "description": "Beneficiary UUID, e.g. 3c7d9e10-2a4b-4f86-b1d3-6e8a0c925174",
                         "name": "beneficiaryId",
                         "in": "path",
                         "required": true
@@ -1116,7 +1311,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/bank-app-ioc_backend_internal_beneficiary.Beneficiary"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -1167,7 +1374,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/bank-app-ioc_backend_internal_auth.CurrentUserResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -1197,7 +1416,22 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/bank-app-ioc_backend_internal_operations.Account"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -1235,7 +1469,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Account UUID",
+                        "description": "Account UUID, e.g. 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048",
                         "name": "accountId",
                         "in": "path",
                         "required": true
@@ -1245,7 +1479,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/bank-app-ioc_backend_internal_operations.Account"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -1286,7 +1532,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Account UUID",
+                        "description": "Account UUID, e.g. 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048",
                         "name": "accountId",
                         "in": "path",
                         "required": true
@@ -1297,19 +1543,19 @@ const docTemplate = `{
                             "CREDIT"
                         ],
                         "type": "string",
-                        "description": "Transaction type",
+                        "description": "Transaction type, e.g. DEBIT",
                         "name": "type",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Page number",
+                        "description": "Page number, e.g. 1",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Page size",
+                        "description": "Page size, e.g. 20",
                         "name": "pageSize",
                         "in": "query"
                     },
@@ -1320,7 +1566,7 @@ const docTemplate = `{
                             "type"
                         ],
                         "type": "string",
-                        "description": "Sort field",
+                        "description": "Sort field, e.g. createdAt",
                         "name": "sort",
                         "in": "query"
                     },
@@ -1330,31 +1576,31 @@ const docTemplate = `{
                             "DESC"
                         ],
                         "type": "string",
-                        "description": "Sort direction",
+                        "description": "Sort direction, e.g. DESC",
                         "name": "direction",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "RFC3339 start time",
+                        "description": "RFC3339 start time, e.g. 2026-10-01T00:00:00Z",
                         "name": "from",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "RFC3339 end time",
+                        "description": "RFC3339 end time, e.g. 2026-10-31T23:59:59Z",
                         "name": "to",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Minimum amount",
+                        "description": "Minimum amount, e.g. 100.00",
                         "name": "minAmount",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Maximum amount",
+                        "description": "Maximum amount, e.g. 5000.00",
                         "name": "maxAmount",
                         "in": "query"
                     }
@@ -1363,7 +1609,22 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/bank-app-ioc_backend_internal_operations.Transaction"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -1413,7 +1674,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Account UUID",
+                        "description": "Account UUID, e.g. 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048",
                         "name": "accountId",
                         "in": "path",
                         "required": true
@@ -1423,7 +1684,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/bank-app-ioc_backend_internal_operations.Account"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -1464,7 +1737,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Exact reference number",
+                        "description": "Exact reference number, e.g. TRF-9F3A7C2E51B8D604",
                         "name": "reference",
                         "in": "query"
                     },
@@ -1475,7 +1748,7 @@ const docTemplate = `{
                             "FAILED"
                         ],
                         "type": "string",
-                        "description": "Transfer status",
+                        "description": "Transfer status, e.g. COMPLETED",
                         "name": "status",
                         "in": "query"
                     },
@@ -1486,31 +1759,31 @@ const docTemplate = `{
                             "RESOLVED"
                         ],
                         "type": "string",
-                        "description": "Review status",
+                        "description": "Review status, e.g. UNDER_REVIEW",
                         "name": "reviewStatus",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "RFC3339 start time",
+                        "description": "RFC3339 start time, e.g. 2026-10-01T00:00:00Z",
                         "name": "dateFrom",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "RFC3339 end time",
+                        "description": "RFC3339 end time, e.g. 2026-10-31T23:59:59Z",
                         "name": "dateTo",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Page number",
+                        "description": "Page number, e.g. 1",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Page size",
+                        "description": "Page size, e.g. 20",
                         "name": "pageSize",
                         "in": "query"
                     }
@@ -1519,7 +1792,22 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/bank-app-ioc_backend_internal_operations.Transfer"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -1566,7 +1854,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Transfer reference number",
+                        "description": "Transfer reference number, e.g. TRF-9F3A7C2E51B8D604",
                         "name": "reference",
                         "in": "path",
                         "required": true
@@ -1585,7 +1873,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/bank-app-ioc_backend_internal_operations.Transfer"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -1635,13 +1935,13 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Page number",
+                        "description": "Page number, e.g. 1",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Page size",
+                        "description": "Page size, e.g. 20",
                         "name": "pageSize",
                         "in": "query"
                     }
@@ -1650,7 +1950,22 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/bank-app-ioc_backend_internal_transfer.Transfer"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -1698,7 +2013,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Unique idempotency key",
+                        "description": "Unique idempotency key, e.g. f47ac10b-58cc-4372-a567-0e02b2c3d479",
                         "name": "Idempotency-Key",
                         "in": "header",
                         "required": true
@@ -1708,7 +2023,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/bank-app-ioc_backend_internal_transfer.Transfer"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -1781,7 +2108,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Transfer reference number",
+                        "description": "Transfer reference number, e.g. TRF-9F3A7C2E51B8D604",
                         "name": "referenceNumber",
                         "in": "path",
                         "required": true
@@ -1791,7 +2118,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/bank-app-ioc_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/bank-app-ioc_backend_internal_transfer.Transfer"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -1811,11 +2150,277 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "bank-app-ioc_backend_internal_account.Account": {
+            "type": "object",
+            "properties": {
+                "accountNumberMasked": {
+                    "type": "string",
+                    "example": "******4821"
+                },
+                "accountType": {
+                    "type": "string",
+                    "example": "SAVINGS"
+                },
+                "balance": {
+                    "type": "string",
+                    "example": "12500.00"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "INR"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "ACTIVE"
+                }
+            }
+        },
+        "bank-app-ioc_backend_internal_account.Transaction": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string",
+                    "example": "3000.00"
+                },
+                "balanceAfter": {
+                    "type": "string",
+                    "example": "12500.00"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2026-10-31T10:15:00Z"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "INR"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Salary credit"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "2a8b4c6d-1e3f-4a90-b7c2-5d6e8f901234"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "CREDIT"
+                }
+            }
+        },
+        "bank-app-ioc_backend_internal_admin.AssignmentDTO": {
+            "type": "object",
+            "properties": {
+                "accountId": {
+                    "type": "string",
+                    "example": "7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048"
+                },
+                "assignedAt": {
+                    "type": "string",
+                    "example": "2026-10-31T10:15:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "6d9f2b41-8c73-4e05-a1b6-7d2f904c5381"
+                },
+                "operationsUserId": {
+                    "type": "string",
+                    "example": "4e8a1c53-7b20-4d96-a5f1-9c2e6b804317"
+                }
+            }
+        },
+        "bank-app-ioc_backend_internal_admin.AuditEvent": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "CREATE"
+                },
+                "actorUserId": {
+                    "type": "string",
+                    "example": "4e8a1c53-7b20-4d96-a5f1-9c2e6b804317"
+                },
+                "correlationId": {
+                    "type": "string",
+                    "example": "8a1d3f72-5c94-4e06-b7a2-9f1c63840527"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2026-10-31T10:15:00Z"
+                },
+                "entityId": {
+                    "type": "string",
+                    "example": "4e8a1c53-7b20-4d96-a5f1-9c2e6b804317"
+                },
+                "entityType": {
+                    "type": "string",
+                    "example": "USER"
+                },
+                "eventType": {
+                    "type": "string",
+                    "example": "USER_CREATED"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "6d9f2b41-8c73-4e05-a1b6-7d2f904c5381"
+                },
+                "ipAddress": {
+                    "type": "string",
+                    "example": "192.0.2.10"
+                },
+                "metadata": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "result": {
+                    "type": "string",
+                    "example": "SUCCESS"
+                }
+            }
+        },
+        "bank-app-ioc_backend_internal_admin.LimitDTO": {
+            "type": "object",
+            "properties": {
+                "currency": {
+                    "type": "string",
+                    "example": "INR"
+                },
+                "maxTransferAmount": {
+                    "type": "string",
+                    "example": "100000.00"
+                }
+            }
+        },
+        "bank-app-ioc_backend_internal_admin.UserDTO": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "example": "2026-10-31T10:15:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "4e8a1c53-7b20-4d96-a5f1-9c2e6b804317"
+                },
+                "role": {
+                    "type": "string",
+                    "example": "OPERATIONS"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "ACTIVE"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "nisha.ops"
+                }
+            }
+        },
+        "bank-app-ioc_backend_internal_admin.UserRoleResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "4e8a1c53-7b20-4d96-a5f1-9c2e6b804317"
+                },
+                "role": {
+                    "type": "string",
+                    "example": "OPERATIONS"
+                }
+            }
+        },
+        "bank-app-ioc_backend_internal_admin.UserStatusResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "4e8a1c53-7b20-4d96-a5f1-9c2e6b804317"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "DEACTIVATED"
+                }
+            }
+        },
+        "bank-app-ioc_backend_internal_auth.AuthUserResponse": {
+            "type": "object",
+            "properties": {
+                "user": {
+                    "$ref": "#/definitions/bank-app-ioc_backend_internal_auth.PublicUser"
+                }
+            }
+        },
+        "bank-app-ioc_backend_internal_auth.CurrentUserResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048"
+                },
+                "role": {
+                    "type": "string",
+                    "example": "CUSTOMER"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "aarav.demo"
+                }
+            }
+        },
+        "bank-app-ioc_backend_internal_auth.PublicUser": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048"
+                },
+                "role": {
+                    "type": "string",
+                    "example": "CUSTOMER"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "aarav.demo"
+                }
+            }
+        },
+        "bank-app-ioc_backend_internal_beneficiary.Beneficiary": {
+            "type": "object",
+            "properties": {
+                "destinationAccountId": {
+                    "type": "string",
+                    "example": "5b2d7f41-9c63-4e80-a5b1-2d7c8f904613"
+                },
+                "destinationAccountMasked": {
+                    "type": "string",
+                    "example": "******4821"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "3c7d9e10-2a4b-4f86-b1d3-6e8a0c925174"
+                },
+                "nickname": {
+                    "type": "string",
+                    "example": "Monthly rent"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "ACTIVE"
+                }
+            }
+        },
         "bank-app-ioc_backend_internal_httpx.ErrorBody": {
             "type": "object",
             "properties": {
                 "code": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "VALIDATION_ERROR"
                 },
                 "fields": {
                     "type": "object",
@@ -1824,7 +2429,8 @@ const docTemplate = `{
                     }
                 },
                 "message": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Request validation failed."
                 }
             }
         },
@@ -1850,14 +2456,172 @@ const docTemplate = `{
                 }
             }
         },
+        "bank-app-ioc_backend_internal_operations.Account": {
+            "type": "object",
+            "properties": {
+                "accountNumberMasked": {
+                    "type": "string",
+                    "example": "******4821"
+                },
+                "accountType": {
+                    "type": "string",
+                    "example": "SAVINGS"
+                },
+                "balance": {
+                    "type": "string",
+                    "example": "12500.00"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "INR"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "ACTIVE"
+                }
+            }
+        },
+        "bank-app-ioc_backend_internal_operations.Transaction": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string",
+                    "example": "3000.00"
+                },
+                "balanceAfter": {
+                    "type": "string",
+                    "example": "9500.00"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2026-10-31T10:15:00Z"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "INR"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Monthly rent"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "2a8b4c6d-1e3f-4a90-b7c2-5d6e8f901234"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "DEBIT"
+                }
+            }
+        },
+        "bank-app-ioc_backend_internal_operations.Transfer": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string",
+                    "example": "3000.00"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2026-10-31T10:15:00Z"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "INR"
+                },
+                "destinationAccountId": {
+                    "type": "string",
+                    "example": "5b2d7f41-9c63-4e80-a5b1-2d7c8f904613"
+                },
+                "destinationAccountMasked": {
+                    "type": "string",
+                    "example": "******4821"
+                },
+                "purpose": {
+                    "type": "string",
+                    "example": "Monthly rent"
+                },
+                "referenceNumber": {
+                    "type": "string",
+                    "example": "TRF-9F3A7C2E51B8D604"
+                },
+                "reviewStatus": {
+                    "type": "string",
+                    "example": "UNDER_REVIEW"
+                },
+                "sourceAccountId": {
+                    "type": "string",
+                    "example": "7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "COMPLETED"
+                }
+            }
+        },
+        "bank-app-ioc_backend_internal_transfer.Transfer": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string",
+                    "example": "3000.00"
+                },
+                "beneficiaryId": {
+                    "type": "string",
+                    "example": "3c7d9e10-2a4b-4f86-b1d3-6e8a0c925174"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2026-10-31T10:15:00Z"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "INR"
+                },
+                "destinationAccountId": {
+                    "type": "string",
+                    "example": "5b2d7f41-9c63-4e80-a5b1-2d7c8f904613"
+                },
+                "destinationAccountMasked": {
+                    "type": "string",
+                    "example": "******4821"
+                },
+                "purpose": {
+                    "type": "string",
+                    "example": "Monthly rent"
+                },
+                "referenceNumber": {
+                    "type": "string",
+                    "example": "TRF-9F3A7C2E51B8D604"
+                },
+                "reviewStatus": {
+                    "type": "string",
+                    "example": "NONE"
+                },
+                "sourceAccountId": {
+                    "type": "string",
+                    "example": "7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "COMPLETED"
+                }
+            }
+        },
         "internal_admin.AssignRequest": {
             "type": "object",
             "properties": {
                 "accountId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048"
                 },
                 "operationsUserId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "4e8a1c53-7b20-4d96-a5f1-9c2e6b804317"
                 }
             }
         },
@@ -1866,16 +2630,20 @@ const docTemplate = `{
             "properties": {
                 "fullName": {
                     "description": "required only when role is CUSTOMER",
-                    "type": "string"
+                    "type": "string",
+                    "example": "Nisha Demo"
                 },
                 "role": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "OPERATIONS"
                 },
                 "temporaryPassword": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ExamplePass123!"
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "nisha.ops"
                 }
             }
         },
@@ -1883,7 +2651,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "maxTransferAmount": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "100000.00"
                 }
             }
         },
@@ -1891,7 +2660,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "newPassword": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ExamplePass123!"
                 }
             }
         },
@@ -1899,7 +2669,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "role": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "OPERATIONS"
                 }
             }
         },
@@ -1907,7 +2678,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "status": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "DEACTIVATED"
                 }
             }
         },
@@ -1915,10 +2687,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ExamplePass123!"
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "aarav.demo"
                 }
             }
         },
@@ -1926,13 +2700,16 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "fullName": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Aarav Demo"
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ExamplePass123!"
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "aarav.demo"
                 }
             }
         },
@@ -1940,10 +2717,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "destinationAccountId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "5b2d7f41-9c63-4e80-a5b1-2d7c8f904613"
                 },
                 "nickname": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Monthly rent"
                 }
             }
         },
@@ -1951,7 +2730,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "status": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "DEACTIVATED"
                 }
             }
         },
@@ -1959,7 +2739,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "reviewStatus": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "UNDER_REVIEW"
                 }
             }
         },
@@ -1967,19 +2748,24 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "amount": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "3000.00"
                 },
                 "beneficiaryId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "3c7d9e10-2a4b-4f86-b1d3-6e8a0c925174"
                 },
                 "destinationAccountId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "5b2d7f41-9c63-4e80-a5b1-2d7c8f904613"
                 },
                 "purpose": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Monthly rent"
                 },
                 "sourceAccountId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048"
                 }
             }
         }

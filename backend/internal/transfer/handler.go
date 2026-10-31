@@ -30,8 +30,8 @@ func NewHandler(service *Service, auditService *audit.Service) *Handler {
 // @Accept json
 // @Produce json
 // @Param request body CreateRequest true "Transfer request"
-// @Param Idempotency-Key header string true "Unique idempotency key"
-// @Success 201 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Param Idempotency-Key header string true "Unique idempotency key, e.g. f47ac10b-58cc-4372-a567-0e02b2c3d479"
+// @Success 201 {object} bank-app-ioc_backend_internal_httpx.Response{data=bank-app-ioc_backend_internal_transfer.Transfer}
 // @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
@@ -129,8 +129,8 @@ func transferFailureCode(err error) string {
 // @Tags transfers
 // @Accept json
 // @Produce json
-// @Param referenceNumber path string true "Transfer reference number"
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Param referenceNumber path string true "Transfer reference number, e.g. TRF-9F3A7C2E51B8D604"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=bank-app-ioc_backend_internal_transfer.Transfer}
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 404 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Security SessionAuth
@@ -193,9 +193,9 @@ func (h *Handler) Get(c *gin.Context) {
 // @Tags transfers
 // @Accept json
 // @Produce json
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Page size"
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Param page query int false "Page number, e.g. 1"
+// @Param pageSize query int false "Page size, e.g. 20"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=[]bank-app-ioc_backend_internal_transfer.Transfer}
 // @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Security SessionAuth

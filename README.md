@@ -22,17 +22,17 @@ Read in this order if you are new: architecture, design, then the rest as needed
 
 | Document | What it answers |
 |---|---|
-| [architecture.md](architecture.md) | How the system is structured: layers, middleware chain, request lifecycle (Mermaid diagrams) |
-| [design.md](design.md) | Why it is built this way: design decisions, trade-offs, failure modes, scaling limits |
-| [api.md](api.md) | Every endpoint, request and response shape, error codes, examples |
-| [database.md](database.md) | ER diagram, tables, constraints, migrations, seed data |
-| [transfer_lifecycle.md](transfer_lifecycle.md) | How a transfer executes, idempotency, review and freeze lifecycles |
-| [security.md](security.md) | Defence layers, threat-to-control map, OWASP API Top 10 mapping, known gaps |
-| [tests.md](tests.md) | Test strategy, how to run every suite, coverage map, gaps |
-| [observability.md](observability.md) | Logging, tracing, metrics, New Relic setup, health checks, graceful shutdown |
-| [workflow.md](workflow.md) | Git and PR workflow, CI pipeline, how to add an endpoint, migration rules |
-| [deployment.md](deployment.md) | Configuration reference, run instructions, production checklist |
-| [changelog_and_status.md](changelog_and_status.md) | What is done, what is known to be missing, roadmap |
+| [architecture.md](docs/architecture.md) | How the system is structured: layers, middleware chain, request lifecycle (Mermaid diagrams) |
+| [design.md](docs/design.md) | Why it is built this way: design decisions, trade-offs, failure modes, scaling limits |
+| [api.md](docs/api.md) | Every endpoint, request and response shape, error codes, examples |
+| [database.md](docs/database.md) | ER diagram, tables, constraints, migrations, seed data |
+| [transfer_lifecycle.md](docs/transfer_lifecycle.md) | How a transfer executes, idempotency, review and freeze lifecycles |
+| [security.md](docs/security.md) | Defence layers, threat-to-control map, OWASP API Top 10 mapping, known gaps |
+| [tests.md](docs/tests.md) | Test strategy, how to run every suite, coverage map, gaps |
+| [observability.md](docs/observability.md) | Logging, tracing, metrics, New Relic setup, health checks, graceful shutdown |
+| [workflow.md](docs/workflow.md) | Git and PR workflow, CI pipeline, how to add an endpoint, migration rules |
+| [deployment.md](docs/deployment.md) | Configuration reference, run instructions, production checklist |
+| [changelog_and_status.md](docs/changelog_and_status.md) | What is done, what is known to be missing, roadmap |
 
 The interactive API reference is generated from code annotations and served at `http://localhost:8080/swagger/index.html` when `SWAGGER_ENABLED=true`.
 
@@ -74,7 +74,7 @@ Useful commands:
 
 | Command | Does |
 |---|---|
-| `make test` | Backend tests (database suites skip unless `TEST_DATABASE_URL` is set, see [tests.md](tests.md)) |
+| `make test` | Backend tests (database suites skip unless `TEST_DATABASE_URL` is set, see [tests.md](docs/tests.md)) |
 | `cd frontend && npm test` | Frontend tests |
 | `cd backend && make swagger` | Regenerate the OpenAPI docs |
 | `make migrate-down` | Roll back one migration |
@@ -89,7 +89,7 @@ Useful commands:
 | Customer | `demo-customer` | `DemoCustomerPassword123!` |
 | Customer | `demo-customer-b` | `DemoCustomerPassword123!` |
 
-These are seeded by migration `001_init`. **Remove them before any real deployment** (see [deployment.md](deployment.md)).
+These are seeded by migration `001_init`. **Remove them before any real deployment** (see [deployment.md](docs/deployment.md)).
 
 ## Roles at a glance
 
@@ -124,7 +124,8 @@ Makefile                 db, migrate, run and test shortcuts
 
 ## Team
 
-| Name | Role / contribution |
+| Name | Contribution |
 |---|---|
-| Guruprakash P | _fill in_ |
-| Harshatha Rithika | _fill in_ |
+| [Guruprakash P](https://www.github.com/05-guruprakash) | Admin side, error handling, validation, observability  |
+| [Harshatha Rithika](https://www.github.com/harshatha-exe) | Customer features, operations, backend integration and testing |
+| [Dushyanth Raj V](https://www.github.com/vdushyanthraj) | Frontend (React) |

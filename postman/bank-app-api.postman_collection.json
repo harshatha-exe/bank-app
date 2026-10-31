@@ -1,0 +1,1342 @@
+{
+  "info": {
+    "name": "Bank App API - Test Collection (DRAFT)",
+    "description": "DRAFT - grounded against the main-branch source but not yet executed end-to-end; the first run may need small fixes.\n\nExecutable API test collection for the Online Banking Mini Application (Go/Gin + PostgreSQL, base path /api). Run the WHOLE collection in folder order with the Collection Runner or Newman, against a DISPOSABLE backend instance on port 8081 backed by the bankdb_test database - see the setup steps that came with this file. Do NOT run it against your normal app database: it mutates data (creates a beneficiary, moves Rs 1.00 between demo accounts, marks a transfer UNDER_REVIEW, assigns an account to demo-operations, freezes and unfreezes an account; if a run aborts mid-pair the account stays frozen).\n\nMechanics: test scripts capture the CSRF token from each login response (meta.csrfToken) and the session id from Set-Cookie, and a collection-level pre-request script sends the session cookie explicitly (some HTTP clients do not store Secure cookies over plain http://localhost, so this does not rely on cookie-jar behavior).\n\nCovered: auth per role, accounts, a BOLA 404 check, beneficiary lifecycle, transfers with idempotency replay, operations review + freeze/unfreeze, admin reads, CSRF-missing 403, and session-expired 401. Deliberately excluded (state-changing and covered by the automated Go API test suite): admin user creation, role/status changes, password resets, limit changes, and signup.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const sid = pm.collectionVariables.get(\"sessionId\");",
+          "if (sid) {",
+          "  pm.request.headers.upsert({ key: \"Cookie\", value: \"session_id=\" + sid });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081/api"
+    },
+    {
+      "key": "admin_username",
+      "value": "demo-admin"
+    },
+    {
+      "key": "admin_password",
+      "value": "DemoAdminPassword123!"
+    },
+    {
+      "key": "ops_username",
+      "value": "demo-operations"
+    },
+    {
+      "key": "ops_password",
+      "value": "DemoOperationsPassword123!"
+    },
+    {
+      "key": "customer_username",
+      "value": "demo-customer"
+    },
+    {
+      "key": "customer_password",
+      "value": "DemoCustomerPassword123!"
+    },
+    {
+      "key": "ops_user_id",
+      "value": "10000000-0000-0000-0000-000000000002"
+    },
+    {
+      "key": "assigned_account_id",
+      "value": "30000000-0000-0000-0000-000000000001"
+    },
+    {
+      "key": "beneficiary_account_id",
+      "value": "30000000-0000-0000-0000-000000000003"
+    },
+    {
+      "key": "bola_account_id",
+      "value": "30000000-0000-0000-0000-000000000003"
+    },
+    {
+      "key": "csrfToken",
+      "value": ""
+    },
+    {
+      "key": "sessionId",
+      "value": ""
+    },
+    {
+      "key": "accountId",
+      "value": ""
+    },
+    {
+      "key": "destinationAccountId",
+      "value": ""
+    },
+    {
+      "key": "beneficiaryId",
+      "value": ""
+    },
+    {
+      "key": "referenceNumber",
+      "value": ""
+    },
+    {
+      "key": "idemKey",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Setup (admin)",
+      "item": [
+        {
+          "name": "Admin login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{admin_username}}\",\n  \"password\": \"{{admin_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "if (j.meta && j.meta.csrfToken) {",
+                  "  pm.collectionVariables.set(\"csrfToken\", j.meta.csrfToken);",
+                  "}",
+                  "const setCookie = pm.response.headers.get(\"Set-Cookie\") || \"\";",
+                  "const m = setCookie.match(/session_id=([^;]+)/);",
+                  "if (m) {",
+                  "  pm.collectionVariables.set(\"sessionId\", m[1]);",
+                  "}",
+                  "pm.test(\"login succeeds\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"user returned\", function () { pm.expect(j.data.user).to.exist; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Assign account to operations user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/account-assignments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "account-assignments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": \"{{assigned_account_id}}\",\n  \"operationsUserId\": \"{{ops_user_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Gives demo-operations visibility of one of demo-customer's seeded accounts so the operations folder has data. Re-runs return 409, which is accepted. Mutates the disposable test DB."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"assigned (201) or already assigned (409)\", function () { pm.expect(pm.response.code).to.be.oneOf([201, 409]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users?page=1&pageSize=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"users listed\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"seeded users present\", function () { const j = pm.response.json(); pm.expect(j.data.length).to.be.above(0); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search audit events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/audit-events?page=1&pageSize=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "audit-events"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"audit log readable\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get transaction limit",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/config/transaction-limit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "config",
+                "transaction-limit"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"limit returned\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"sessionId\", \"\");",
+                  "pm.test(\"logged out\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. Customer auth",
+      "item": [
+        {
+          "name": "Customer login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{customer_username}}\",\n  \"password\": \"{{customer_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "if (j.meta && j.meta.csrfToken) {",
+                  "  pm.collectionVariables.set(\"csrfToken\", j.meta.csrfToken);",
+                  "}",
+                  "const setCookie = pm.response.headers.get(\"Set-Cookie\") || \"\";",
+                  "const m = setCookie.match(/session_id=([^;]+)/);",
+                  "if (m) {",
+                  "  pm.collectionVariables.set(\"sessionId\", m[1]);",
+                  "}",
+                  "pm.test(\"login succeeds\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"CSRF token captured\", function () {",
+                  "  pm.expect(pm.collectionVariables.get(\"csrfToken\")).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get current user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "me"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"me returned\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"username matches\", function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j.data.username).to.eql(pm.collectionVariables.get(\"customer_username\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Accounts",
+      "item": [
+        {
+          "name": "List own accounts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/accounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "accounts"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"accounts listed\", function () { pm.response.to.have.status(200); });",
+                  "const j = pm.response.json();",
+                  "const list = Array.isArray(j.data) ? j.data : (j.data.items || j.data.accounts);",
+                  "pm.test(\"two seeded accounts present\", function () { pm.expect(list.length).to.be.at.least(2); });",
+                  "pm.collectionVariables.set(\"accountId\", list[0].id);",
+                  "pm.collectionVariables.set(\"destinationAccountId\", list[1].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get one account",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/accounts/{{accountId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "accounts",
+                "{{accountId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"account returned\", function () { pm.response.to.have.status(200); });",
+                  "const j = pm.response.json();",
+                  "pm.test(\"id matches\", function () { pm.expect(j.data.id).to.eql(pm.collectionVariables.get(\"accountId\")); });",
+                  "pm.test(\"account number is masked\", function () { pm.expect(j.data.accountNumberMasked).to.match(/^\\*{6}\\d{4}$/); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get statement (transactions)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/accounts/{{accountId}}/transactions?page=1&pageSize=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "accounts",
+                "{{accountId}}",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"transactions listed\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "BOLA check: another customer's account",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/accounts/{{bola_account_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "accounts",
+                "{{bola_account_id}}"
+              ]
+            },
+            "description": "Account {{bola_account_id}} belongs to demo-customer-b. The API must hide it."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"other customer's account is invisible (404)\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Beneficiaries",
+      "item": [
+        {
+          "name": "Add beneficiary",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/beneficiaries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "beneficiaries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"destinationAccountId\": \"{{beneficiary_account_id}}\",\n  \"nickname\": \"Demo beneficiary (collection)\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Destination is demo-customer-b's seeded account. Re-runs return 409 DUPLICATE_BENEFICIARY, which is accepted. Mutates the disposable test DB."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"created (201) or already exists (409)\", function () { pm.expect(pm.response.code).to.be.oneOf([201, 409]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List beneficiaries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/beneficiaries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "beneficiaries"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"beneficiaries listed\", function () { pm.response.to.have.status(200); });",
+                  "const j = pm.response.json();",
+                  "const list = Array.isArray(j.data) ? j.data : (j.data.items || j.data.beneficiaries);",
+                  "const b = list.find(function (x) { return x.nickname === \"Demo beneficiary (collection)\"; });",
+                  "pm.test(\"beneficiary found\", function () { pm.expect(b).to.exist; });",
+                  "pm.collectionVariables.set(\"beneficiaryId\", b.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Deactivate beneficiary",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/beneficiaries/{{beneficiaryId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "beneficiaries",
+                "{{beneficiaryId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"DEACTIVATED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"deactivated\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"status applied\", function () { const j = pm.response.json(); pm.expect(j.data.status).to.eql(\"DEACTIVATED\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reactivate beneficiary",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/beneficiaries/{{beneficiaryId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "beneficiaries",
+                "{{beneficiaryId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACTIVE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"reactivated\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Transfers",
+      "item": [
+        {
+          "name": "Create transfer (own accounts)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idemKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transfers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transfers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountId\": \"{{accountId}}\",\n  \"destinationAccountId\": \"{{destinationAccountId}}\",\n  \"amount\": \"1.00\",\n  \"purpose\": \"API collection test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Moves Rs 1.00 between demo-customer's own two seeded accounts in the disposable test DB. The idempotency key is generated fresh per run."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"idemKey\", pm.variables.replaceIn(\"{{$guid}}\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"transfer created\", function () { pm.response.to.have.status(201); });",
+                  "const j = pm.response.json();",
+                  "pm.test(\"reference number returned\", function () { pm.expect(j.data.referenceNumber).to.match(/^TRF-/); });",
+                  "pm.collectionVariables.set(\"referenceNumber\", j.data.referenceNumber);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Replay same idempotency key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idemKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transfers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transfers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountId\": \"{{accountId}}\",\n  \"destinationAccountId\": \"{{destinationAccountId}}\",\n  \"amount\": \"1.00\",\n  \"purpose\": \"API collection test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Re-sends the exact same request and Idempotency-Key. Checks the replay contract (original result returned). The stronger no-double-debit guarantee is asserted by the Go integration tests (TestTransferFailureIdempotencyAndConcurrency)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"replay accepted\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+                  "pm.test(\"replay returns the original reference number\", function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j.data.referenceNumber).to.eql(pm.collectionVariables.get(\"referenceNumber\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List transfers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/transfers?page=1&pageSize=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transfers"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"transfers listed\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"pagination meta present\", function () { const j = pm.response.json(); pm.expect(j.meta.totalItems).to.exist; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get transfer by reference",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/transfers/{{referenceNumber}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transfers",
+                "{{referenceNumber}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"transfer found\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"reference matches\", function () { const j = pm.response.json(); pm.expect(j.data.referenceNumber).to.eql(pm.collectionVariables.get(\"referenceNumber\")); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Missing CSRF token is rejected",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transfers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transfers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountId\": \"{{accountId}}\",\n  \"destinationAccountId\": \"{{destinationAccountId}}\",\n  \"amount\": \"1.00\",\n  \"purpose\": \"CSRF negative check\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Same request without the X-CSRF-Token header. The session is still valid, so this isolates the CSRF check. No transfer is created."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"rejected with 403\", function () { pm.response.to.have.status(403); });",
+                  "pm.test(\"error code is CSRF_INVALID\", function () { const j = pm.response.json(); pm.expect(j.error.code).to.eql(\"CSRF_INVALID\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Operations",
+      "item": [
+        {
+          "name": "Operations login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{ops_username}}\",\n  \"password\": \"{{ops_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "if (j.meta && j.meta.csrfToken) {",
+                  "  pm.collectionVariables.set(\"csrfToken\", j.meta.csrfToken);",
+                  "}",
+                  "const setCookie = pm.response.headers.get(\"Set-Cookie\") || \"\";",
+                  "const m = setCookie.match(/session_id=([^;]+)/);",
+                  "if (m) {",
+                  "  pm.collectionVariables.set(\"sessionId\", m[1]);",
+                  "}",
+                  "pm.test(\"login succeeds\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List assigned accounts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/operations/accounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "operations",
+                "accounts"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"assigned accounts listed\", function () { pm.response.to.have.status(200); });",
+                  "const j = pm.response.json();",
+                  "const list = Array.isArray(j.data) ? j.data : (j.data.items || j.data.accounts);",
+                  "const assigned = pm.collectionVariables.get(\"assigned_account_id\");",
+                  "pm.test(\"assignment from setup step is visible\", function () {",
+                  "  pm.expect(list.map(function (a) { return a.id; })).to.include(assigned);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Assigned account transactions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/operations/accounts/{{assigned_account_id}}/transactions?page=1&pageSize=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "operations",
+                "accounts",
+                "{{assigned_account_id}}",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"transactions listed\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List transfers in scope",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/operations/transfers?page=1&pageSize=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "operations",
+                "transfers"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "The transfer created in folder 4 touches the assigned account, so it must appear here."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"transfers listed\", function () { pm.response.to.have.status(200); });",
+                  "const j = pm.response.json();",
+                  "const list = Array.isArray(j.data) ? j.data : (j.data.items || j.data.transfers);",
+                  "pm.test(\"own transfer visible in scope\", function () {",
+                  "  pm.expect(list.map(function (t) { return t.referenceNumber; })).to.include(pm.collectionVariables.get(\"referenceNumber\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Review the created transfer",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/operations/transfers/{{referenceNumber}}/review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "operations",
+                "transfers",
+                "{{referenceNumber}}",
+                "review"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reviewStatus\": \"UNDER_REVIEW\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Marks the transfer created in folder 4 as UNDER_REVIEW in the disposable test DB."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"review recorded\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"reviewStatus applied\", function () { const j = pm.response.json(); pm.expect(j.data.reviewStatus).to.eql(\"UNDER_REVIEW\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Freeze assigned account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/operations/accounts/{{assigned_account_id}}/freeze",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "operations",
+                "accounts",
+                "{{assigned_account_id}}",
+                "freeze"
+              ]
+            },
+            "description": "NOTE: if the run aborts after this request, the account stays frozen. Re-run the collection or send the unfreeze request alone. Only affects the disposable test DB."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"frozen\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unfreeze assigned account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/operations/accounts/{{assigned_account_id}}/unfreeze",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "operations",
+                "accounts",
+                "{{assigned_account_id}}",
+                "unfreeze"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"unfrozen\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operations logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"sessionId\", \"\");",
+                  "pm.test(\"logged out\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Session negative checks",
+      "item": [
+        {
+          "name": "Get current user after logout",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "me"
+              ]
+            },
+            "description": "Runs after the operations logout, so no valid session remains."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"rejected with 401\", function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

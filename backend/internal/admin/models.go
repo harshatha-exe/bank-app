@@ -15,26 +15,26 @@ import (
 // ---------- requests: raw and untrusted ----------
 
 type CreateUserRequest struct {
-	Username          string `json:"username"`
-	Role              string `json:"role"`
-	TemporaryPassword string `json:"temporaryPassword"`
-	FullName          string `json:"fullName"` // required only when role is CUSTOMER
+	Username          string `json:"username" example:"nisha.ops"`
+	Role              string `json:"role" example:"OPERATIONS"`
+	TemporaryPassword string `json:"temporaryPassword" example:"ExamplePass123!"`
+	FullName          string `json:"fullName" example:"Nisha Demo"` // required only when role is CUSTOMER
 }
 type StatusRequest struct {
-	Status string `json:"status"`
+	Status string `json:"status" example:"DEACTIVATED"`
 }
 type RoleRequest struct {
-	Role string `json:"role"`
+	Role string `json:"role" example:"OPERATIONS"`
 }
 type ResetPasswordRequest struct {
-	NewPassword string `json:"newPassword"`
+	NewPassword string `json:"newPassword" example:"ExamplePass123!"`
 }
 type AssignRequest struct {
-	OperationsUserID string `json:"operationsUserId"`
-	AccountID        string `json:"accountId"`
+	OperationsUserID string `json:"operationsUserId" example:"4e8a1c53-7b20-4d96-a5f1-9c2e6b804317"`
+	AccountID        string `json:"accountId" example:"7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048"`
 }
 type LimitRequest struct {
-	MaxTransferAmount string `json:"maxTransferAmount"`
+	MaxTransferAmount string `json:"maxTransferAmount" example:"100000.00"`
 }
 
 // AuditQuery holds the raw query-string values.
@@ -49,34 +49,46 @@ type UserQuery struct {
 // ---------- responses ----------
 
 type UserDTO struct {
-	ID        uuid.UUID `json:"id"`
-	Username  string    `json:"username"`
-	Role      string    `json:"role"`
-	Status    string    `json:"status"`
-	CreatedAt string    `json:"createdAt"`
+	ID        uuid.UUID `json:"id" example:"4e8a1c53-7b20-4d96-a5f1-9c2e6b804317"`
+	Username  string    `json:"username" example:"nisha.ops"`
+	Role      string    `json:"role" example:"OPERATIONS"`
+	Status    string    `json:"status" example:"ACTIVE"`
+	CreatedAt string    `json:"createdAt" example:"2026-10-31T10:15:00Z"`
 }
 type AssignmentDTO struct {
-	ID               uuid.UUID `json:"id"`
-	OperationsUserID uuid.UUID `json:"operationsUserId"`
-	AccountID        uuid.UUID `json:"accountId"`
-	AssignedAt       string    `json:"assignedAt"`
+	ID               uuid.UUID `json:"id" example:"6d9f2b41-8c73-4e05-a1b6-7d2f904c5381"`
+	OperationsUserID uuid.UUID `json:"operationsUserId" example:"4e8a1c53-7b20-4d96-a5f1-9c2e6b804317"`
+	AccountID        uuid.UUID `json:"accountId" example:"7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048"`
+	AssignedAt       string    `json:"assignedAt" example:"2026-10-31T10:15:00Z"`
 }
 type LimitDTO struct {
-	Currency          string `json:"currency"`
-	MaxTransferAmount string `json:"maxTransferAmount"`
+	Currency          string `json:"currency" example:"INR"`
+	MaxTransferAmount string `json:"maxTransferAmount" example:"100000.00"`
 }
 type AuditEvent struct {
-	ID            uuid.UUID       `json:"id"`
-	ActorUserID   *uuid.UUID      `json:"actorUserId"`
-	EventType     string          `json:"eventType"`
-	EntityType    *string         `json:"entityType"`
-	EntityID      *uuid.UUID      `json:"entityId"`
-	Action        string          `json:"action"`
-	Result        string          `json:"result"`
-	IPAddress     *string         `json:"ipAddress"`
-	CorrelationID uuid.UUID       `json:"correlationId"`
+	ID            uuid.UUID       `json:"id" example:"6d9f2b41-8c73-4e05-a1b6-7d2f904c5381"`
+	ActorUserID   *uuid.UUID      `json:"actorUserId" example:"4e8a1c53-7b20-4d96-a5f1-9c2e6b804317"`
+	EventType     string          `json:"eventType" example:"USER_CREATED"`
+	EntityType    *string         `json:"entityType" example:"USER"`
+	EntityID      *uuid.UUID      `json:"entityId" example:"4e8a1c53-7b20-4d96-a5f1-9c2e6b804317"`
+	Action        string          `json:"action" example:"CREATE"`
+	Result        string          `json:"result" example:"SUCCESS"`
+	IPAddress     *string         `json:"ipAddress" example:"192.0.2.10"`
+	CorrelationID uuid.UUID       `json:"correlationId" example:"8a1d3f72-5c94-4e06-b7a2-9f1c63840527"`
 	Metadata      json.RawMessage `json:"metadata,omitempty"`
-	CreatedAt     string          `json:"createdAt"`
+	CreatedAt     string          `json:"createdAt" example:"2026-10-31T10:15:00Z"`
+}
+
+// swagger documentation only, not used at runtime
+type UserStatusResponse struct {
+	ID     uuid.UUID `json:"id" example:"4e8a1c53-7b20-4d96-a5f1-9c2e6b804317"`
+	Status string    `json:"status" example:"DEACTIVATED"`
+}
+
+// swagger documentation only, not used at runtime
+type UserRoleResponse struct {
+	ID   uuid.UUID `json:"id" example:"4e8a1c53-7b20-4d96-a5f1-9c2e6b804317"`
+	Role string    `json:"role" example:"OPERATIONS"`
 }
 
 // ---------- clean(): sanitize + validate + convert to typed values ----------

@@ -52,7 +52,7 @@ func pathID(c *gin.Context, name string) (uuid.UUID, bool) {
 // @Accept json
 // @Produce json
 // @Param request body CreateUserRequest true "User request"
-// @Success 201 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Success 201 {object} bank-app-ioc_backend_internal_httpx.Response{data=bank-app-ioc_backend_internal_admin.UserDTO}
 // @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
@@ -83,12 +83,12 @@ func (h *Handler) CreateUser(c *gin.Context) {
 // @Tags admin
 // @Accept json
 // @Produce json
-// @Param search query string false "Username substring"
-// @Param role query string false "User role"
-// @Param status query string false "User status"
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Page size"
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Param search query string false "Username substring, e.g. nisha"
+// @Param role query string false "User role, e.g. OPERATIONS"
+// @Param status query string false "User status, e.g. ACTIVE"
+// @Param page query int false "Page number, e.g. 1"
+// @Param pageSize query int false "Page size, e.g. 25"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=[]bank-app-ioc_backend_internal_admin.UserDTO}
 // @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
@@ -116,9 +116,9 @@ func (h *Handler) ListUsers(c *gin.Context) {
 // @Tags admin
 // @Accept json
 // @Produce json
-// @Param userId path string true "User UUID"
+// @Param userId path string true "User UUID, e.g. 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317"
 // @Param request body StatusRequest true "Status request"
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=bank-app-ioc_backend_internal_admin.UserStatusResponse}
 // @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
@@ -153,9 +153,9 @@ func (h *Handler) SetStatus(c *gin.Context) {
 // @Tags admin
 // @Accept json
 // @Produce json
-// @Param userId path string true "User UUID"
+// @Param userId path string true "User UUID, e.g. 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317"
 // @Param request body RoleRequest true "Role request"
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=bank-app-ioc_backend_internal_admin.UserRoleResponse}
 // @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
@@ -190,7 +190,7 @@ func (h *Handler) ChangeRole(c *gin.Context) {
 // @Tags admin
 // @Accept json
 // @Produce json
-// @Param userId path string true "User UUID"
+// @Param userId path string true "User UUID, e.g. 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317"
 // @Param request body ResetPasswordRequest true "Password request"
 // @Success 204
 // @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
@@ -227,7 +227,7 @@ func (h *Handler) ResetPassword(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body AssignRequest true "Assignment request"
-// @Success 201 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Success 201 {object} bank-app-ioc_backend_internal_httpx.Response{data=bank-app-ioc_backend_internal_admin.AssignmentDTO}
 // @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
@@ -258,7 +258,7 @@ func (h *Handler) AssignAccount(c *gin.Context) {
 // @Tags admin
 // @Accept json
 // @Produce json
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=bank-app-ioc_backend_internal_admin.LimitDTO}
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Security SessionAuth
@@ -278,7 +278,7 @@ func (h *Handler) GetLimit(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body LimitRequest true "Limit request"
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=bank-app-ioc_backend_internal_admin.LimitDTO}
 // @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
@@ -308,16 +308,16 @@ func (h *Handler) SetLimit(c *gin.Context) {
 // @Tags admin
 // @Accept json
 // @Produce json
-// @Param eventType query string false "Event type"
-// @Param actorUserId query string false "Actor user UUID"
-// @Param entityType query string false "Entity type"
-// @Param entityId query string false "Entity UUID"
-// @Param result query string false "Result"
-// @Param from query string false "RFC3339 start time"
-// @Param to query string false "RFC3339 end time"
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Page size"
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Param eventType query string false "Event type, e.g. USER_CREATED"
+// @Param actorUserId query string false "Actor user UUID, e.g. 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317"
+// @Param entityType query string false "Entity type, e.g. USER"
+// @Param entityId query string false "Entity UUID, e.g. 4e8a1c53-7b20-4d96-a5f1-9c2e6b804317"
+// @Param result query string false "Result, e.g. SUCCESS"
+// @Param from query string false "RFC3339 start time, e.g. 2026-10-01T00:00:00Z"
+// @Param to query string false "RFC3339 end time, e.g. 2026-10-31T23:59:59Z"
+// @Param page query int false "Page number, e.g. 1"
+// @Param pageSize query int false "Page size, e.g. 25"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=[]bank-app-ioc_backend_internal_admin.AuditEvent}
 // @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse

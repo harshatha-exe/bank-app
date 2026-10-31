@@ -32,7 +32,7 @@ func NewHandler(service *Service, auditService *audit.Service) *Handler {
 // @Tags accounts
 // @Accept json
 // @Produce json
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=[]bank-app-ioc_backend_internal_account.Account}
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Security SessionAuth
 // @Router /accounts [get]
@@ -55,8 +55,8 @@ func (h *Handler) List(c *gin.Context) {
 // @Tags accounts
 // @Accept json
 // @Produce json
-// @Param accountId path string true "Account UUID"
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Param accountId path string true "Account UUID, e.g. 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=bank-app-ioc_backend_internal_account.Account}
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 404 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Security SessionAuth
@@ -91,17 +91,17 @@ func (h *Handler) Get(c *gin.Context) {
 // @Tags accounts
 // @Accept json
 // @Produce json
-// @Param accountId path string true "Account UUID"
-// @Param type query string false "Transaction type" Enums(DEBIT,CREDIT)
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Page size"
-// @Param sort query string false "Sort field" Enums(createdAt,amount,type)
-// @Param direction query string false "Sort direction" Enums(ASC,DESC)
-// @Param from query string false "RFC3339 start time"
-// @Param to query string false "RFC3339 end time"
-// @Param minAmount query string false "Minimum amount"
-// @Param maxAmount query string false "Maximum amount"
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Param accountId path string true "Account UUID, e.g. 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048"
+// @Param type query string false "Transaction type, e.g. CREDIT" Enums(DEBIT,CREDIT)
+// @Param page query int false "Page number, e.g. 1"
+// @Param pageSize query int false "Page size, e.g. 20"
+// @Param sort query string false "Sort field, e.g. createdAt" Enums(createdAt,amount,type)
+// @Param direction query string false "Sort direction, e.g. DESC" Enums(ASC,DESC)
+// @Param from query string false "RFC3339 start time, e.g. 2026-10-01T00:00:00Z"
+// @Param to query string false "RFC3339 end time, e.g. 2026-10-31T23:59:59Z"
+// @Param minAmount query string false "Minimum amount, e.g. 100.00"
+// @Param maxAmount query string false "Maximum amount, e.g. 5000.00"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=[]bank-app-ioc_backend_internal_account.Transaction}
 // @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 404 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse

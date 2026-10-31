@@ -28,7 +28,7 @@ func NewHandler(service *Service, auditService *audit.Service) *Handler {
 // @Summary List assigned accounts
 // @Tags operations
 // @Produce json
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=[]bank-app-ioc_backend_internal_operations.Account}
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Security SessionAuth
@@ -51,17 +51,17 @@ func (h *Handler) ListAccounts(c *gin.Context) {
 // @Summary List assigned account transactions
 // @Tags operations
 // @Produce json
-// @Param accountId path string true "Account UUID"
-// @Param type query string false "Transaction type" Enums(DEBIT,CREDIT)
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Page size"
-// @Param sort query string false "Sort field" Enums(createdAt,amount,type)
-// @Param direction query string false "Sort direction" Enums(ASC,DESC)
-// @Param from query string false "RFC3339 start time"
-// @Param to query string false "RFC3339 end time"
-// @Param minAmount query string false "Minimum amount"
-// @Param maxAmount query string false "Maximum amount"
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Param accountId path string true "Account UUID, e.g. 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048"
+// @Param type query string false "Transaction type, e.g. DEBIT" Enums(DEBIT,CREDIT)
+// @Param page query int false "Page number, e.g. 1"
+// @Param pageSize query int false "Page size, e.g. 20"
+// @Param sort query string false "Sort field, e.g. createdAt" Enums(createdAt,amount,type)
+// @Param direction query string false "Sort direction, e.g. DESC" Enums(ASC,DESC)
+// @Param from query string false "RFC3339 start time, e.g. 2026-10-01T00:00:00Z"
+// @Param to query string false "RFC3339 end time, e.g. 2026-10-31T23:59:59Z"
+// @Param minAmount query string false "Minimum amount, e.g. 100.00"
+// @Param maxAmount query string false "Maximum amount, e.g. 5000.00"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=[]bank-app-ioc_backend_internal_operations.Transaction}
 // @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
@@ -141,14 +141,14 @@ func parseTime(value, name string) (*time.Time, error) {
 // @Summary List assigned transfers
 // @Tags operations
 // @Produce json
-// @Param reference query string false "Exact reference number"
-// @Param status query string false "Transfer status" Enums(PENDING,COMPLETED,FAILED)
-// @Param reviewStatus query string false "Review status" Enums(NONE,UNDER_REVIEW,RESOLVED)
-// @Param dateFrom query string false "RFC3339 start time"
-// @Param dateTo query string false "RFC3339 end time"
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Page size"
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Param reference query string false "Exact reference number, e.g. TRF-9F3A7C2E51B8D604"
+// @Param status query string false "Transfer status, e.g. COMPLETED" Enums(PENDING,COMPLETED,FAILED)
+// @Param reviewStatus query string false "Review status, e.g. UNDER_REVIEW" Enums(NONE,UNDER_REVIEW,RESOLVED)
+// @Param dateFrom query string false "RFC3339 start time, e.g. 2026-10-01T00:00:00Z"
+// @Param dateTo query string false "RFC3339 end time, e.g. 2026-10-31T23:59:59Z"
+// @Param page query int false "Page number, e.g. 1"
+// @Param pageSize query int false "Page size, e.g. 20"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=[]bank-app-ioc_backend_internal_operations.Transfer}
 // @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
@@ -197,9 +197,9 @@ func (h *Handler) ListTransfers(c *gin.Context) {
 // @Tags operations
 // @Accept json
 // @Produce json
-// @Param reference path string true "Transfer reference number"
+// @Param reference path string true "Transfer reference number, e.g. TRF-9F3A7C2E51B8D604"
 // @Param request body ReviewRequest true "Review request"
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=bank-app-ioc_backend_internal_operations.Transfer}
 // @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
@@ -236,8 +236,8 @@ func (h *Handler) ReviewTransfer(c *gin.Context) {
 // @Summary Freeze account
 // @Tags operations
 // @Produce json
-// @Param accountId path string true "Account UUID"
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Param accountId path string true "Account UUID, e.g. 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=bank-app-ioc_backend_internal_operations.Account}
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 404 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
@@ -250,8 +250,8 @@ func (h *Handler) Freeze(c *gin.Context) { h.changeStatus(c, "FROZEN", "ACCOUNT_
 // @Summary Unfreeze account
 // @Tags operations
 // @Produce json
-// @Param accountId path string true "Account UUID"
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Param accountId path string true "Account UUID, e.g. 7f4e2a10-8c3d-4b91-a6e2-1d5f7c9b2048"
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=bank-app-ioc_backend_internal_operations.Account}
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 403 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 404 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse

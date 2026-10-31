@@ -26,7 +26,7 @@ func NewHandler(service *Service, auditService *audit.Service) *Handler {
 // @Tags beneficiaries
 // @Accept json
 // @Produce json
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=[]bank-app-ioc_backend_internal_beneficiary.Beneficiary}
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Security SessionAuth
 // @Router /beneficiaries [get]
@@ -50,7 +50,7 @@ func (h *Handler) List(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body CreateRequest true "Beneficiary request"
-// @Success 201 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Success 201 {object} bank-app-ioc_backend_internal_httpx.Response{data=bank-app-ioc_backend_internal_beneficiary.Beneficiary}
 // @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 404 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
@@ -96,9 +96,9 @@ func (h *Handler) Create(c *gin.Context) {
 // @Tags beneficiaries
 // @Accept json
 // @Produce json
-// @Param beneficiaryId path string true "Beneficiary UUID"
+// @Param beneficiaryId path string true "Beneficiary UUID, e.g. 3c7d9e10-2a4b-4f86-b1d3-6e8a0c925174"
 // @Param request body StatusRequest true "Status request"
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=bank-app-ioc_backend_internal_beneficiary.Beneficiary}
 // @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 404 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse

@@ -29,7 +29,7 @@ func NewHandler(service *Service, auditService *audit.Service, csrfSecret string
 // @Accept json
 // @Produce json
 // @Param request body SignupRequest true "Signup request"
-// @Success 201 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Success 201 {object} bank-app-ioc_backend_internal_httpx.Response{data=bank-app-ioc_backend_internal_auth.AuthUserResponse}
 // @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 409 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Router /auth/signup [post]
@@ -57,7 +57,7 @@ func (h *Handler) Signup(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body LoginRequest true "Login request"
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=bank-app-ioc_backend_internal_auth.AuthUserResponse}
 // @Failure 400 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Failure 429 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse "RATE_LIMITED; Retry-After contains seconds until retry"
@@ -107,7 +107,7 @@ func (h *Handler) Logout(c *gin.Context) {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response
+// @Success 200 {object} bank-app-ioc_backend_internal_httpx.Response{data=bank-app-ioc_backend_internal_auth.CurrentUserResponse}
 // @Failure 401 {object} bank-app-ioc_backend_internal_httpx.ErrorResponse
 // @Security SessionAuth
 // @Router /me [get]
